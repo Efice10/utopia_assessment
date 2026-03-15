@@ -1,0 +1,327 @@
+'use client';
+
+import { useState } from 'react';
+
+import { useRouter } from 'next/navigation';
+
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  Loader2,
+  ArrowLeft,
+  CheckCircle,
+  DollarSign,
+  MapPin,
+  Phone,
+  User,
+  Wrench,
+} from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
+import { StatusBadge } from '@/components/shared';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useOrder, useUpdateOrder } from '@/hooks';
+import { useCreateServiceRecord } from '@/hooks/use-service-records';
+
+import { FileUpload } from './file-upload';
+
+
+const schema = z.object({
+  work_done: z.string().min(1, 'Work done is required'),
+  extra_charges: z.number().min(0, 'Extra charges must be 0 or greater').optional(),
+  remarks: z.string().optional(),
+  payment_amount: z.number().min(0, 'Payment amount must be 0 or greater').optional(),
+  payment_method: z.enum(['cash', 'online_transfer', 'card']).optional(),
+  receipt_url: z.string().optional(),
+});
+
+type FormData = z.infer<typeof schema>;
+
+interface JobCompletionFormProps {
+  orderId: string;
+}
+
+export function JobCompletionForm({ orderId }: JobCompletionFormProps) {
+  const [files, setFiles] = useState<File[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
+
+  const { data: order, isLoading: orderLoading, error: orderError } = useOrder(orderId);
+  const updateOrder = useUpdateOrder();
+  const createServiceRecord = useCreateServiceRecord();
+
+  const form = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      work_done: '',
+      extra_charges: 0,
+      remarks: '',
+      payment_amount: 0,
+      payment_method: undefined,
+      receipt_url: '',
+    },
+  });
+
+  const extraCharges = form.watch('extra_charges') || 0;
+  const finalAmount = (order?.quoted_price || 0) + extraCharges;
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-MY', {
+      style: 'currency',
+      currency: 'MYR',
+    }).format(amount);
+  };
+
+  const handleSubmit = async (data: FormData) => {
+    if (!order) return;
+
+    setIsSubmitting(true);
+    try {
+      // Create service record
+      await createServiceRecord.mutateAsync({
+        order_id: order.id,
+        technician_id: order.assigned_technician_id || 'tech-001',
+        work_done: data.work_done,
+        extra_charges: data.extra_charges || 0,
+        files: files.map((f) => f.name), // In real app, upload files first
+        remarks: data.remarks || '',
+        final_amount: finalAmount,
+        payment_amount: data.payment_amount,
+        payment_method: data.payment_method,
+        receipt_url: data.receipt_url,
+        completed_at: new Date().toISOString(),
+      });
+
+      // Update order status to job_done
+      await updateOrder.mutateAsync({
+        id: order.id,
+        updates: { status: 'job_done' },
+      });
+
+      alert('Job completed successfully!');
+      router.push('/jobs');
+    } catch (error) {
+      console.error('Failed to complete job:', error);
+      alert('Failed to complete job. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (orderLoading) {
+    return (
+      <div className='flex items-center justify-center py-12'>
+        <Loader2 className='w-6 h-6 animate-spin text-muted-foreground' />
+      </div>
+    );
+  }
+
+  if (orderError) {
+    return (
+      <div className='text-center py-12 text-destructive'>
+        Error loading order: {orderError.message}
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className='text-center py-12 text-muted-foreground'>
+        Order not found
+      </div>
+    );
+  }
+
+  return (
+    <div className='min-h-screen flex flex-col bg-muted/30'>
+      {/* Header */}
+      <div className='sticky top-0 z-10 bg-background border-b px-4 py-4'>
+        <div className='flex items-center gap-4'>
+          <button
+            type='button'
+            onClick={() => router.back()}
+            className='p-2 rounded-full hover:bg-muted'
+          >
+            <ArrowLeft className='w-5 h-5' />
+          </button>
+          <div className='flex-1'>
+            <h1 className='text-lg font-semibold'>Complete Job</h1>
+            <p className='text-sm text-muted-foreground'>{order.order_no}</p>
+          </div>
+          <StatusBadge status='info' />
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className='flex-1 p-4 pb-32 space-y-4'>
+        {/* Order Info Card */}
+        <div className='bg-card rounded-xl border p-4'>
+          <div className='space-y-3 text-sm'>
+            <div className='flex items-center gap-2'>
+              <User className='w-4 h-4 text-muted-foreground' />
+              <span className='font-medium'>{order.customer_name}</span>
+            </div>
+            <div className='flex items-center gap-2 text-muted-foreground'>
+              <Phone className='w-4 h-4 shrink-0' />
+              <span>{order.phone}</span>
+            </div>
+            <div className='flex items-start gap-2 text-muted-foreground'>
+              <MapPin className='w-4 h-4 mt-0.5 shrink-0' />
+              <span>{order.address}</span>
+            </div>
+          </div>
+
+          <div className='flex items-center justify-between pt-4 mt-4 border-t'>
+            <div>
+              <p className='text-xs text-muted-foreground'>Service Type</p>
+              <p className='font-medium capitalize'>
+                {order.service_type?.replace('_', ' ')}
+              </p>
+            </div>
+            <div className='text-right'>
+              <p className='text-xs text-muted-foreground'>Quoted Price</p>
+              <p className='font-semibold text-primary'>
+                {formatCurrency(order.quoted_price)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={form.handleSubmit(handleSubmit)} className='space-y-4'>
+          {/* Work Done */}
+          <div className='bg-card rounded-xl border p-4 space-y-4'>
+            <h3 className='font-medium flex items-center gap-2'>
+              <Wrench className='w-4 h-4 text-muted-foreground' />
+              Work Details
+            </h3>
+
+            <div>
+              <Label htmlFor='work_done'>Work Done *</Label>
+              <Textarea
+                id='work_done'
+                {...form.register('work_done')}
+                rows={4}
+                placeholder='Describe what work was done...'
+              />
+              {form.formState.errors.work_done && (
+                <p className='text-sm text-destructive mt-1'>
+                  {form.formState.errors.work_done.message}
+                </p>
+              )}
+            </div>
+
+            <div className='grid grid-cols-2 gap-4'>
+              <div>
+                <Label htmlFor='extra_charges'>Extra Charges (RM)</Label>
+                <Input
+                  id='extra_charges'
+                  type='number'
+                  step='0.01'
+                  min='0'
+                  {...form.register('extra_charges', { valueAsNumber: true })}
+                />
+              </div>
+              <div>
+                <Label htmlFor='final_amount'>Final Amount (RM)</Label>
+                <Input
+                  id='final_amount'
+                  value={finalAmount.toFixed(2)}
+                  disabled
+                  className='bg-muted font-semibold'
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor='remarks'>Remarks</Label>
+              <Textarea
+                id='remarks'
+                {...form.register('remarks')}
+                rows={2}
+                placeholder='Any additional notes...'
+              />
+            </div>
+          </div>
+
+          {/* File Upload */}
+          <div className='bg-card rounded-xl border p-4'>
+            <FileUpload
+              files={files}
+              onFilesChange={setFiles}
+              maxFiles={6}
+              maxFileSize={10}
+            />
+          </div>
+
+          {/* Payment Section */}
+          <div className='bg-card rounded-xl border p-4 space-y-4'>
+            <div className='flex items-center gap-2'>
+              <DollarSign className='w-4 h-4 text-muted-foreground' />
+              <span className='font-medium text-sm'>Payment (Optional)</span>
+            </div>
+
+            <div className='grid grid-cols-2 gap-4'>
+              <div>
+                <Label htmlFor='payment_amount'>Payment Received (RM)</Label>
+                <Input
+                  id='payment_amount'
+                  type='number'
+                  step='0.01'
+                  min='0'
+                  {...form.register('payment_amount', { valueAsNumber: true })}
+                />
+              </div>
+              <div>
+                <Label htmlFor='payment_method'>Payment Method</Label>
+                <select
+                  id='payment_method'
+                  {...form.register('payment_method')}
+                  className='w-full h-9 rounded-md border bg-background px-3 text-sm'
+                >
+                  <option value=''>Select...</option>
+                  <option value='cash'>Cash</option>
+                  <option value='online_transfer'>Online Transfer</option>
+                  <option value='card'>Card</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor='receipt_url'>Receipt URL</Label>
+              <Input
+                id='receipt_url'
+                {...form.register('receipt_url')}
+                placeholder='Receipt photo URL'
+              />
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <div className='sticky bottom-4 bg-background border-t pt-4'>
+            <Button
+              type='submit'
+              className='w-full h-12'
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className='w-4 h-4 animate-spin mr-2' />
+                  Completing...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className='w-5 h-5 mr-2' />
+                  Complete Job
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
