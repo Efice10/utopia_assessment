@@ -19,6 +19,12 @@ export type ServiceType = 'installation' | 'servicing' | 'repair' | 'gas_refill'
 
 export type PaymentMethod = 'cash' | 'online_transfer' | 'card';
 
+export type NotificationChannel = 'whatsapp' | 'sms' | 'email';
+
+export type NotificationStatus = 'pending' | 'sent' | 'failed';
+
+export type RecipientType = 'customer' | 'technician' | 'manager';
+
 // ===========================================
 // Database Tables
 // ===========================================
@@ -46,6 +52,11 @@ export interface Database {
         Insert: BranchInsert;
         Update: BranchUpdate;
       };
+      notification_logs: {
+        Row: NotificationLog;
+        Insert: NotificationLogInsert;
+        Update: NotificationLogUpdate;
+      };
     };
     Views: {
       [_ in never]: never;
@@ -58,6 +69,9 @@ export interface Database {
       order_status: OrderStatus;
       service_type: ServiceType;
       payment_method: PaymentMethod;
+      notification_channel: NotificationChannel;
+      notification_status: NotificationStatus;
+      recipient_type: RecipientType;
     };
   };
 }
@@ -224,6 +238,45 @@ export interface BranchUpdate {
   address?: string;
   phone?: string | null;
   is_active?: boolean;
+}
+
+// ===========================================
+// Notification Log Types
+// ===========================================
+
+export interface NotificationLog {
+  id: string;
+  order_id: string | null;
+  recipient_phone: string;
+  recipient_type: RecipientType;
+  recipient_name: string | null;
+  message: string;
+  channel: NotificationChannel;
+  status: NotificationStatus;
+  error_message: string | null;
+  sent_at: string | null;
+  created_at: string;
+  created_by: string | null;
+}
+
+export interface NotificationLogInsert {
+  id?: string;
+  order_id?: string | null;
+  recipient_phone: string;
+  recipient_type: RecipientType;
+  recipient_name?: string | null;
+  message: string;
+  channel?: NotificationChannel;
+  status?: NotificationStatus;
+  error_message?: string | null;
+  sent_at?: string | null;
+  created_by?: string | null;
+}
+
+export interface NotificationLogUpdate {
+  status?: NotificationStatus;
+  error_message?: string | null;
+  sent_at?: string | null;
 }
 
 // ===========================================

@@ -2,8 +2,9 @@ import type { NextRequest} from 'next/server';
 import { NextResponse } from 'next/server';
 
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import type { AuditAction, AuditEntity } from '@/types/audit';
+import type { AuditAction, AuditEntity, AuditLogInsert } from '@/types/audit';
 
+// GET - Fetch audit logs (admin only)
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
@@ -81,6 +82,61 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('[API] Audit logs fetch error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// POST - Create audit log entry (authenticated users)
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = await createSupabaseServerClient();
+
+    // Check authentication
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get user profile for name
+    const { data: userProfile } = await supabase
+      .from('users')
+      .select('name, role')
+      .eq('email', user.email)
+      .single();
+
+    // Parse request body
+    const body = await request.json();
+    const { action, entity, entity_id, entity_name, description, old_values, new_values } = body;
+
+    if (!action || !entity || !description) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Create audit log entry
+    const logEntry: AuditLogInsert = {
+      user_id: user.id,
+      user_name: userProfile?.name || user.user_metadata?.name || 'Unknown',
+      user_email: user.email,
+      action,
+      entity,
+      entity_id,
+      entity_name,
+      description,
+      old_values,
+      new_values,
+    };
+
+    const { error } = await supabase
+      .from('audit_logs')
+      .insert(logEntry);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('[API] Audit log create error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

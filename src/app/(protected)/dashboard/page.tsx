@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 
 import { motion } from 'framer-motion';
@@ -13,6 +14,8 @@ import {
   Clock,
   CheckCircle2,
   Loader2,
+  TrendingUp,
+  Trophy,
 } from 'lucide-react';
 
 import {
@@ -21,11 +24,17 @@ import {
   StatCard,
   StatCardGrid,
   SimpleGlassCard,
- StatusBadge } from '@/components/shared';
+  StatusBadge } from '@/components/shared';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { useOrders, useTechnicians } from '@/hooks';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { KPIFilters } from '@/components/dashboard/kpi-filters';
+import { JobsChart } from '@/components/dashboard/jobs-chart';
+import { RevenueChart } from '@/components/dashboard/revenue-chart';
+import { LeaderboardTable } from '@/components/dashboard/leaderboard-table';
+import { useOrders, useTechnicians, useLeaderboard, useJobsChartData, useRevenueChartData } from '@/hooks';
 import { useAuthStore } from '@/lib/auth-store';
+import type { KPIFilters as KPIFiltersType } from '@/types/kpi';
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('en-MY', {
@@ -55,8 +64,15 @@ function getStatusBadgeVariant(status: string): 'warning' | 'info' | 'success' |
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
+  const [kpiFilters, setKpiFilters] = useState<KPIFiltersType>({
+    period: 'all_time',
+  });
+
   const { data: orders, isLoading: ordersLoading } = useOrders();
   const { data: technicians, isLoading: techniciansLoading } = useTechnicians();
+  const { data: leaderboard, isLoading: leaderboardLoading } = useLeaderboard(kpiFilters);
+  const { data: jobsChartData, isLoading: jobsChartLoading } = useJobsChartData(kpiFilters);
+  const { data: revenueChartData, isLoading: revenueChartLoading } = useRevenueChartData(kpiFilters);
 
   const isLoading = ordersLoading || techniciansLoading;
 
@@ -202,6 +218,41 @@ export default function DashboardPage() {
               </motion.div>
             </Link>
           </div>
+        </div>
+
+        {/* KPI Dashboard Section */}
+        <div className='space-y-4'>
+          <div className='flex items-center justify-between'>
+            <div className='flex items-center gap-2'>
+              <TrendingUp className='h-5 w-5 text-primary' />
+              <h2 className='text-lg font-semibold'>Performance Analytics</h2>
+            </div>
+            <KPIFilters filters={kpiFilters} onFiltersChange={setKpiFilters} />
+          </div>
+
+          <Tabs defaultValue='charts' className='space-y-4'>
+            <TabsList>
+              <TabsTrigger value='charts'>Charts</TabsTrigger>
+              <TabsTrigger value='leaderboard'>Leaderboard</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value='charts' className='space-y-4'>
+              <div className='grid gap-4 lg:grid-cols-2'>
+                <JobsChart data={jobsChartData || []} isLoading={jobsChartLoading} />
+                <RevenueChart data={revenueChartData || []} isLoading={revenueChartLoading} />
+              </div>
+            </TabsContent>
+
+            <TabsContent value='leaderboard'>
+              <SimpleGlassCard className='p-6'>
+                <div className='flex items-center gap-2 mb-4'>
+                  <Trophy className='h-5 w-5 text-yellow-500' />
+                  <h3 className='font-semibold'>Technician Leaderboard</h3>
+                </div>
+                <LeaderboardTable data={leaderboard || []} isLoading={leaderboardLoading} />
+              </SimpleGlassCard>
+            </TabsContent>
+          </Tabs>
         </div>
 
         {/* Recent Orders */}

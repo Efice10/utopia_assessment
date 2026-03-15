@@ -4,6 +4,15 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import {
+  detectAnomalies,
+  analyzeWorkload,
+  generateInsights,
+  formatAnomaliesForContext,
+  formatWorkloadForContext,
+  formatInsightsForContext,
+} from './analytics';
+
 // Tool parameter definition
 interface ToolParameter {
   type: string;
@@ -87,6 +96,28 @@ export const AI_TOOLS: Record<string, ToolDefinition> = {
       },
     },
   },
+  detect_anomalies: {
+    name: 'detect_anomalies',
+    description: 'Analyze operational data to detect unusual patterns like revenue drops, order volume changes, technician overload, etc.',
+    parameters: {
+      days_to_analyze: { type: 'number', description: 'Number of days to analyze (default: 30)', required: false },
+      sensitivity: { type: 'string', description: 'Detection sensitivity: low, medium, high (default: medium)', required: false },
+    },
+  },
+  analyze_workload: {
+    name: 'analyze_workload',
+    description: 'Analyze technician workload distribution and identify imbalances',
+    parameters: {
+      include_inactive: { type: 'boolean', description: 'Include inactive technicians in analysis (default: false)', required: false },
+    },
+  },
+  generate_insights: {
+    name: 'generate_insights',
+    description: 'Generate operational insights including performance, revenue, efficiency, risk, and opportunities',
+    parameters: {
+      period: { type: 'string', description: 'Time period for insights: day, week, month (default: week)', required: false },
+    },
+  },
 };
 
 // Service type mapping
@@ -119,6 +150,12 @@ export async function executeTool(
       return executeAssignTechnician(parameters, supabase);
     case 'update_order_status':
       return executeUpdateOrderStatus(parameters, supabase);
+    case 'detect_anomalies':
+      return executeDetectAnomalies(parameters, supabase);
+    case 'analyze_workload':
+      return executeAnalyzeWorkload(parameters, supabase);
+    case 'generate_insights':
+      return executeGenerateInsights(parameters, supabase);
     default:
       return { success: false, message: `Unknown tool: ${toolName}` };
   }
@@ -476,6 +513,97 @@ async function executeUpdateOrderStatus(
     return {
       success: false,
       message: `Error updating status: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    };
+  }
+}
+
+// Detect anomalies in operational data
+async function executeDetectAnomalies(
+  params: Record<string, unknown>,
+  supabase: SupabaseClient
+): Promise<ToolResult> {
+  try {
+    const daysToAnalyze = typeof params.days_to_analyze === 'number' ? params.days_to_analyze : 30;
+    const sensitivity = (params.sensitivity as 'low' | 'medium' | 'high') || 'medium';
+
+    const result = await detectAnomalies(supabase, { daysToAnalyze, sensitivity });
+    const formattedResult = formatAnomaliesForContext(result);
+
+    return {
+      success: true,
+      message: result.summary,
+      data: {
+        hasAnomalies: result.hasAnomalies,
+        anomalyCount: result.anomalies.length,
+        anomalies: result.anomalies,
+        formatted: formattedResult,
+      },
+    };
+  } catch (error) {
+    console.error('Error in detect_anomalies:', error);
+    return {
+      success: false,
+      message: `Error detecting anomalies: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    };
+  }
+}
+
+// Analyze technician workload
+async function executeAnalyzeWorkload(
+  params: Record<string, unknown>,
+  supabase: SupabaseClient
+): Promise<ToolResult> {
+  try {
+    const includeInactive = params.include_inactive === true;
+
+    const result = await analyzeWorkload(supabase, { includeInactive });
+    const formattedResult = formatWorkloadForContext(result);
+
+    return {
+      success: true,
+      message: result.summary,
+      data: {
+        technicians: result.technicians,
+        recommendations: result.recommendations,
+        imbalanceDetected: result.imbalanceDetected,
+        formatted: formattedResult,
+      },
+    };
+  } catch (error) {
+    console.error('Error in analyze_workload:', error);
+    return {
+      success: false,
+      message: `Error analyzing workload: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    };
+  }
+}
+
+// Generate operational insights
+async function executeGenerateInsights(
+  params: Record<string, unknown>,
+  supabase: SupabaseClient
+): Promise<ToolResult> {
+  try {
+    const period = (params.period as 'day' | 'week' | 'month') || 'week';
+
+    const result = await generateInsights(supabase, { period });
+    const formattedResult = formatInsightsForContext(result);
+
+    return {
+      success: true,
+      message: `Generated ${result.insights.length} insights for ${result.period}`,
+      data: {
+        insights: result.insights,
+        period: result.period,
+        generatedAt: result.generatedAt,
+        formatted: formattedResult,
+      },
+    };
+  } catch (error) {
+    console.error('Error in generate_insights:', error);
+    return {
+      success: false,
+      message: `Error generating insights: ${error instanceof Error ? error.message : 'Unknown error'}`,
     };
   }
 }

@@ -15,6 +15,9 @@ CREATE TYPE user_role AS ENUM ('admin', 'technician', 'manager');
 CREATE TYPE order_status AS ENUM ('new', 'assigned', 'in_progress', 'job_done', 'reviewed', 'closed');
 CREATE TYPE service_type AS ENUM ('installation', 'servicing', 'repair', 'gas_refill', 'inspection', 'others');
 CREATE TYPE payment_method AS ENUM ('cash', 'online_transfer', 'card');
+CREATE TYPE notification_channel AS ENUM ('whatsapp', 'sms', 'email');
+CREATE TYPE notification_status AS ENUM ('pending', 'sent', 'failed');
+CREATE TYPE recipient_type AS ENUM ('customer', 'technician', 'manager');
 
 -- ===========================================
 -- Branches Table
@@ -90,6 +93,25 @@ CREATE TABLE IF NOT EXISTS service_records (
 );
 
 -- ===========================================
+-- Notification Logs Table
+-- ===========================================
+
+CREATE TABLE IF NOT EXISTS notification_logs (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  order_id UUID REFERENCES orders(id) ON DELETE SET NULL,
+  recipient_phone VARCHAR(50) NOT NULL,
+  recipient_type recipient_type NOT NULL,
+  recipient_name VARCHAR(255),
+  message TEXT NOT NULL,
+  channel notification_channel DEFAULT 'whatsapp',
+  status notification_status DEFAULT 'pending',
+  error_message TEXT,
+  sent_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  created_by UUID REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- ===========================================
 -- Indexes
 -- ===========================================
 
@@ -99,6 +121,9 @@ CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_branch ON users(branch_id);
 CREATE INDEX IF NOT EXISTS idx_service_records_technician ON service_records(technician_id);
+CREATE INDEX IF NOT EXISTS idx_notification_logs_order ON notification_logs(order_id);
+CREATE INDEX IF NOT EXISTS idx_notification_logs_status ON notification_logs(status);
+CREATE INDEX IF NOT EXISTS idx_notification_logs_created_at ON notification_logs(created_at DESC);
 
 -- ===========================================
 -- Auto-generate Order Number Function
@@ -177,6 +202,7 @@ ALTER TABLE branches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE service_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notification_logs ENABLE ROW LEVEL SECURITY;
 
 -- For development: Allow all operations (you can restrict later)
 -- In production, you would create more specific policies
@@ -191,6 +217,9 @@ CREATE POLICY "Allow all operations on orders" ON orders
   FOR ALL USING (true) WITH CHECK (true);
 
 CREATE POLICY "Allow all operations on service_records" ON service_records
+  FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow all operations on notification_logs" ON notification_logs
   FOR ALL USING (true) WITH CHECK (true);
 
 -- ===========================================

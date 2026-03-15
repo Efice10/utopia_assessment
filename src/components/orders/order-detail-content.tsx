@@ -19,6 +19,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
+import { NotificationHistory } from '@/components/orders/notification-history';
 import { StatusBadge } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { useOrder, useUpdateOrder, useDeleteOrder, useTechnicians } from '@/hooks';
@@ -327,6 +328,13 @@ export function OrderDetailContent({ id }: OrderDetailContentProps) {
               </div>
             </div>
           )}
+
+          {/* Notification History */}
+          <NotificationHistory
+            orderId={order.id}
+            customerPhone={order.phone}
+            technicianId={order.assigned_technician_id || undefined}
+          />
         </div>
       </div>
 

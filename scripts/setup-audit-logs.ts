@@ -4,8 +4,9 @@
  * Run with: npx tsx scripts/setup-audit-logs.ts
  */
 
-import { config } from 'dotenv';
 import { resolve } from 'path';
+
+import { config } from 'dotenv';
 
 config({ path: resolve(process.cwd(), '.env.local') });
 
