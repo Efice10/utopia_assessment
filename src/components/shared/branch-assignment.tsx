@@ -21,8 +21,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
 import { useBranches, useUserBranches, useUpdateUserBranches } from '@/hooks';
+import { cn } from '@/lib/utils';
 import type { Branch } from '@/types/database';
 
 interface BranchAssignmentProps {

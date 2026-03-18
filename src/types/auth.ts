@@ -4,6 +4,7 @@ export interface User {
   email: string;
   avatar?: string;
   role?: 'user' | 'admin' | 'technician' | 'manager';
+  branch_id?: string | null;
 }
 
 export interface LoginCredentials {

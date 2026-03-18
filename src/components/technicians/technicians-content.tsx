@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+import Link from 'next/link';
+
 import { Search, Plus, Phone, Mail, Briefcase, Star, Loader2, Eye, Pencil } from 'lucide-react';
 
 import { StatusBadge, StatCard, StatCardGrid } from '@/components/shared';
@@ -9,13 +11,6 @@ import { ModernTable } from '@/components/shared/modern-table';
 import type { ColumnDef, RowAction } from '@/components/shared/modern-table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet';
 import { useTechnicians, useTechnicianStats, useSelectedBranch } from '@/hooks';
 import { useAuthStore } from '@/lib/auth-store';
 import type { User } from '@/types/database';
@@ -29,7 +24,6 @@ function formatCurrency(amount: number): string {
 
 export function TechniciansContent() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
   const { user } = useAuthStore();
   const { selectedBranchId } = useSelectedBranch();
 
@@ -184,30 +178,12 @@ export function TechniciansContent() {
           </p>
         </div>
         {canAddTechnician && (
-          <Sheet open={isAddSheetOpen} onOpenChange={setIsAddSheetOpen}>
-            <SheetTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Technician
-              </Button>
-            </SheetTrigger>
-            <SheetContent>
-              <SheetHeader>
-                <SheetTitle>Add New Technician</SheetTitle>
-              </SheetHeader>
-              <div className="mt-6 space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Add a new technician to the system. They will be able to view and complete assigned orders.
-                </p>
-                <div className="flex justify-end gap-2 pt-4">
-                  <Button variant="outline" onClick={() => setIsAddSheetOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button>Add Technician</Button>
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
+          <Link href="/technicians/new">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Technician
+            </Button>
+          </Link>
         )}
       </div>
 

@@ -35,6 +35,7 @@ async function fetchUserProfile(id: string, email?: string): Promise<User | null
       email: byId.email,
       avatar: byId.avatar_url ?? undefined,
       role: byId.role as 'user' | 'admin' | 'technician' | 'manager',
+      branch_id: byId.branch_id,
     };
   }
 
@@ -53,6 +54,7 @@ async function fetchUserProfile(id: string, email?: string): Promise<User | null
         email: byEmail.email,
         avatar: byEmail.avatar_url ?? undefined,
         role: byEmail.role as 'user' | 'admin' | 'technician' | 'manager',
+        branch_id: byEmail.branch_id,
       };
     }
   }
