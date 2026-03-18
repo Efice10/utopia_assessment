@@ -11,13 +11,11 @@ import {
   Loader2,
   Save,
   AlertCircle,
-  User,
   Building2,
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { BranchAssignment } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -29,27 +27,28 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { useUser, useUpdateUser } from '@/hooks';
+import { Textarea } from '@/components/ui/textarea';
+import { useBranch, useUpdateBranch } from '@/hooks';
 
-const technicianSchema = z.object({
+const branchSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Valid email is required'),
-  phone: z.string().min(10, 'Valid phone number is required'),
+  address: z.string().min(5, 'Address is required'),
+  phone: z.string().optional(),
   is_active: z.boolean(),
 });
 
-type TechnicianFormData = z.infer<typeof technicianSchema>;
+type BranchFormData = z.infer<typeof branchSchema>;
 
-interface TechnicianEditContentProps {
+interface BranchEditContentProps {
   id: string;
 }
 
-export function TechnicianEditContent({ id }: TechnicianEditContentProps) {
+export function BranchEditContent({ id }: BranchEditContentProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: technician, isLoading, error } = useUser(id);
-  const updateUser = useUpdateUser();
+  const { data: branch, isLoading, error } = useBranch(id);
+  const updateBranch = useUpdateBranch();
 
   const {
     register,
@@ -57,34 +56,34 @@ export function TechnicianEditContent({ id }: TechnicianEditContentProps) {
     setValue,
     watch,
     formState: { errors, isDirty },
-  } = useForm<TechnicianFormData>({
-    resolver: zodResolver(technicianSchema),
-    values: technician ? {
-      name: technician.name ?? '',
-      email: technician.email ?? '',
-      phone: technician.phone ?? '',
-      is_active: technician.is_active ?? true,
+  } = useForm<BranchFormData>({
+    resolver: zodResolver(branchSchema),
+    values: branch ? {
+      name: branch.name ?? '',
+      address: branch.address ?? '',
+      phone: branch.phone ?? '',
+      is_active: branch.is_active ?? true,
     } : undefined,
   });
 
   const isActive = watch('is_active');
 
-  const onSubmit = async (data: TechnicianFormData) => {
+  const onSubmit = async (data: BranchFormData) => {
     setIsSubmitting(true);
     try {
-      await updateUser.mutateAsync({
+      await updateBranch.mutateAsync({
         id,
         updates: {
           name: data.name,
-          email: data.email,
-          phone: data.phone,
+          address: data.address,
+          phone: data.phone ?? null,
           is_active: data.is_active,
         },
       });
-      router.push(`/technicians/${id}`);
+      router.push(`/branches/${id}`);
     } catch (error) {
-      console.error('Failed to update technician:', error);
-      alert('Failed to update technician. Please try again.');
+      console.error('Failed to update branch:', error);
+      alert('Failed to update branch. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -102,25 +101,25 @@ export function TechnicianEditContent({ id }: TechnicianEditContentProps) {
     return (
       <div className="text-center py-12">
         <AlertCircle className="w-12 h-12 mx-auto text-destructive mb-4" />
-        <p className="font-medium text-destructive">Error loading technician</p>
+        <p className="font-medium text-destructive">Error loading branch</p>
         <p className="text-sm text-muted-foreground">{error.message}</p>
-        <Link href="/technicians">
+        <Link href="/branches">
           <Button variant="outline" className="mt-4">
-            Back to Technicians
+            Back to Branches
           </Button>
         </Link>
       </div>
     );
   }
 
-  if (!technician) {
+  if (!branch) {
     return (
       <div className="text-center py-12">
-        <User className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-        <p className="font-medium">Technician not found</p>
-        <Link href="/technicians">
+        <Building2 className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+        <p className="font-medium">Branch not found</p>
+        <Link href="/branches">
           <Button variant="outline" className="mt-4">
-            Back to Technicians
+            Back to Branches
           </Button>
         </Link>
       </div>
@@ -132,15 +131,15 @@ export function TechnicianEditContent({ id }: TechnicianEditContentProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href={`/technicians/${id}`}>
+          <Link href={`/branches/${id}`}>
             <Button variant="ghost" size="icon">
               <ArrowLeft className="w-5 h-5" />
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold">Edit Technician</h1>
+            <h1 className="text-2xl font-bold">Edit Branch</h1>
             <p className="text-muted-foreground">
-              Update technician information
+              Update branch information
             </p>
           </div>
         </div>
@@ -149,26 +148,26 @@ export function TechnicianEditContent({ id }: TechnicianEditContentProps) {
       {/* Form */}
       <Card className="max-w-2xl">
         <CardHeader>
-          <CardTitle>Technician Information</CardTitle>
+          <CardTitle>Branch Information</CardTitle>
           <CardDescription>
-            Update the technician&apos;s details below
+            Update the branch&apos;s details below
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Personal Information */}
+            {/* Branch Details */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-muted-foreground">
-                Personal Information
+                Branch Details
               </h3>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="name">
-                    Full Name <span className="text-destructive">*</span>
+                    Branch Name <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="name"
-                    placeholder="Enter full name"
+                    placeholder="Enter branch name"
                     {...register('name')}
                     className={errors.name ? 'border-destructive' : ''}
                   />
@@ -179,31 +178,10 @@ export function TechnicianEditContent({ id }: TechnicianEditContentProps) {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">
-                    Email Address <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="email@example.com"
-                    {...register('email')}
-                    className={errors.email ? 'border-destructive' : ''}
-                  />
-                  {errors.email && (
-                    <p className="text-sm text-destructive">
-                      {errors.email.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="phone">
-                    Phone Number <span className="text-destructive">*</span>
-                  </Label>
+                  <Label htmlFor="phone">Phone Number</Label>
                   <Input
                     id="phone"
-                    placeholder="012-3456789"
+                    placeholder="03-12345678"
                     {...register('phone')}
                     className={errors.phone ? 'border-destructive' : ''}
                   />
@@ -213,6 +191,23 @@ export function TechnicianEditContent({ id }: TechnicianEditContentProps) {
                     </p>
                   )}
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="address">
+                  Address <span className="text-destructive">*</span>
+                </Label>
+                <Textarea
+                  id="address"
+                  placeholder="Full branch address"
+                  rows={3}
+                  {...register('address')}
+                  className={errors.address ? 'border-destructive' : ''}
+                />
+                {errors.address && (
+                  <p className="text-sm text-destructive">
+                    {errors.address.message}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -225,7 +220,7 @@ export function TechnicianEditContent({ id }: TechnicianEditContentProps) {
                 <div className="space-y-0.5">
                   <Label htmlFor="is_active">Active Status</Label>
                   <p className="text-sm text-muted-foreground">
-                    Inactive technicians cannot be assigned to new orders
+                    Inactive branches cannot be selected for new orders
                   </p>
                 </div>
                 <Switch
@@ -235,20 +230,9 @@ export function TechnicianEditContent({ id }: TechnicianEditContentProps) {
               </div>
             </div>
 
-            {/* Branch Assignment */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
-                Branch Access
-              </h3>
-              <div className="rounded-lg border p-4">
-                <BranchAssignment userId={id} />
-              </div>
-            </div>
-
             {/* Submit Buttons */}
             <div className="flex justify-end gap-3">
-              <Link href={`/technicians/${id}`}>
+              <Link href={`/branches/${id}`}>
                 <Button type="button" variant="outline" disabled={isSubmitting}>
                   Cancel
                 </Button>

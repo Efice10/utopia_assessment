@@ -66,7 +66,6 @@ export default function NewTeamMemberPage() {
 
   const onSubmit = async (data: FormData) => {
     // Simulate API call
-    console.log('Creating team member:', data);
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     // Navigate back to list page after success

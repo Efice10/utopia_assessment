@@ -81,7 +81,7 @@ export function OrderDetailContent({ id }: OrderDetailContentProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const { data: order, isLoading, error } = useOrder(id);
-  const { data: technicians } = useTechnicians();
+  const { data: technicians } = useTechnicians(order?.branch_id ?? undefined);
   const updateOrder = useUpdateOrder();
   const deleteOrder = useDeleteOrder();
 

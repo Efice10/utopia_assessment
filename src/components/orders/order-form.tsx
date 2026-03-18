@@ -36,7 +36,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { useCreateOrder, useTechnicians } from '@/hooks';
+import { useCreateOrder, useTechnicians, useSelectedBranch } from '@/hooks';
 import type { ServiceType } from '@/types/database';
 
 // Service types from PRD
@@ -103,7 +103,8 @@ export function OrderForm({ onSuccess }: OrderFormProps) {
     },
   });
 
-  const { data: technicians, isLoading: loadingTechnicians } = useTechnicians();
+  const { selectedBranchId, selectedBranch } = useSelectedBranch();
+  const { data: technicians, isLoading: loadingTechnicians } = useTechnicians(selectedBranchId ?? undefined);
   const createOrder = useCreateOrder();
 
   const selectedTechnicianId = watch('assigned_technician_id');
@@ -126,6 +127,7 @@ export function OrderForm({ onSuccess }: OrderFormProps) {
         quoted_price: data.quoted_price,
         assigned_technician_id: data.assigned_technician_id || null,
         admin_notes: data.admin_notes || null,
+        branch_id: selectedBranchId || null,
         created_by: 'admin', // In real app, this would be the logged-in user ID
       });
 
@@ -165,6 +167,7 @@ export function OrderForm({ onSuccess }: OrderFormProps) {
           </CardTitle>
           <CardDescription>
             Create a new service order and assign a technician
+            {selectedBranch && ` for ${selectedBranch.name}`}
           </CardDescription>
         </CardHeader>
         <CardContent>

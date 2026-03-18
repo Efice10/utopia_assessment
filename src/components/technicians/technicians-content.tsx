@@ -16,7 +16,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { useTechnicians, useTechnicianStats } from '@/hooks';
+import { useTechnicians, useTechnicianStats, useSelectedBranch } from '@/hooks';
 import { useAuthStore } from '@/lib/auth-store';
 import type { User } from '@/types/database';
 
@@ -31,8 +31,13 @@ export function TechniciansContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
   const { user } = useAuthStore();
+  const { selectedBranchId } = useSelectedBranch();
 
-  const { data: technicians, isLoading: isLoadingTechnicians, error: techniciansError } = useTechnicians();
+  // For technicians, always use their own branch; for others, use selected branch
+  const userBranchId = (user as { branch_id?: string }).branch_id;
+  const effectiveBranchId = user?.role === 'technician' ? userBranchId : selectedBranchId;
+
+  const { data: technicians, isLoading: isLoadingTechnicians, error: techniciansError } = useTechnicians(effectiveBranchId ?? undefined);
   const { data: stats, isLoading: isLoadingStats } = useTechnicianStats();
 
   const isLoading = isLoadingTechnicians || isLoadingStats;

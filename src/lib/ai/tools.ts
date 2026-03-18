@@ -2,8 +2,6 @@
  * AI Tools - Functions the AI can execute
  */
 
-import type { SupabaseClient } from '@supabase/supabase-js';
-
 import {
   detectAnomalies,
   analyzeWorkload,
@@ -12,6 +10,9 @@ import {
   formatWorkloadForContext,
   formatInsightsForContext,
 } from './analytics';
+
+import type { SupabaseClient } from '@supabase/supabase-js';
+
 
 // Tool parameter definition
 interface ToolParameter {

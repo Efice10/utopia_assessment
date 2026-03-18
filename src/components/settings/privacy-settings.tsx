@@ -64,12 +64,10 @@ export function PrivacySettings() {
 
   const handleExportData = () => {
     // TODO: Implement data export functionality
-    console.log('Exporting data...');
   };
 
   const handleDeleteAccount = () => {
     // TODO: Implement account deletion flow
-    console.log('Delete account requested...');
   };
 
   return (

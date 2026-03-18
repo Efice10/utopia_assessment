@@ -27,7 +27,7 @@ export interface OrderFilters {
 }
 
 // Fetch all orders
-export function useOrders(filters?: OrderFilters) {
+export function useOrders(filters?: OrderFilters, enabled = true) {
   return useQuery({
     queryKey: orderKeys.list(filters),
     queryFn: async () => {
@@ -67,6 +67,7 @@ export function useOrders(filters?: OrderFilters) {
       if (error) throw error;
       return data as OrderWithRelations[];
     },
+    enabled,
   });
 }
 

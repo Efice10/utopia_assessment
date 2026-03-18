@@ -67,3 +67,6 @@ export type {
   SortState,
   ModernTableProps,
 } from './modern-table';
+
+// Branch Assignment
+export { BranchAssignment } from './branch-assignment';

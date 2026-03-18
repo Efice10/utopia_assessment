@@ -46,17 +46,22 @@ export function useUsers(filters?: UserFilters) {
 }
 
 // Fetch technicians only
-export function useTechnicians() {
+export function useTechnicians(branchId?: string) {
   return useQuery({
-    queryKey: userKeys.technicians(),
+    queryKey: [...userKeys.technicians(), branchId],
     queryFn: async () => {
       const supabase = getSupabaseBrowserClient();
-      const { data, error } = await supabase
+      let query = supabase
         .from('users')
         .select('*')
         .eq('role', 'technician')
-        .eq('is_active', true)
-        .order('name');
+        .eq('is_active', true);
+
+      if (branchId) {
+        query = query.eq('branch_id', branchId);
+      }
+
+      const { data, error } = await query.order('name');
 
       if (error) throw error;
       return data as User[];

@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 
 import {
   Activity,
-  AirVent,
+  Building2,
   ClipboardList,
   LayoutDashboard,
   type LucideIcon,
@@ -17,7 +17,7 @@ import {
   Wrench,
 } from 'lucide-react';
 
-import { TeamSwitcher } from '@/components/layouts/team-switcher';
+import { BranchSwitcher } from '@/components/layouts/branch-switcher';
 import {
   Sidebar,
   SidebarContent,
@@ -84,6 +84,12 @@ const allNavSections: NavSection[] = [
         icon: Users,
         roles: ['admin'], // Admin: Assign Technician = Yes
       },
+      {
+        title: 'Branches',
+        url: '/branches',
+        icon: Building2,
+        roles: ['admin'], // Admin: Manage Branches = Yes
+      },
     ],
   },
 ];
@@ -120,15 +126,6 @@ const getNavigationForRole = (userRole: string): NavSection[] => {
     }))
     .filter((section) => section.items.length > 0);
 };
-
-// Company data
-const companyData = {
-  name: 'Sejuk Sejuk',
-  logo: AirVent,
-  plan: 'Operations',
-};
-
-const teamsArray = [companyData];
 
 // Nav Item Component
 function NavItem({ item }: { item: NavItemType }) {
@@ -200,7 +197,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={teamsArray} />
+        <BranchSwitcher />
       </SidebarHeader>
 
       <SidebarContent>

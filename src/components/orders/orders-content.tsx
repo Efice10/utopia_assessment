@@ -18,7 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useOrders } from '@/hooks';
+import { useOrders, useSelectedBranch } from '@/hooks';
+import { useAuthStore } from '@/lib/auth-store';
 import type { OrderWithRelations } from '@/types/database';
 
 const statusFilters = [
@@ -62,8 +63,24 @@ export function OrdersContent() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Get selected branch for filtering
+  const { selectedBranchId, selectedBranch, isLoading: isBranchLoading } = useSelectedBranch();
+  const { user } = useAuthStore();
+
+  // For technicians, always use their assigned branch
+  const userBranchId = (user as { branch_id?: string }).branch_id;
+  const effectiveBranchId = user?.role === 'technician' ? userBranchId : selectedBranchId;
+
+  // Build filters object - always filter by branch
+  const filters = {
+    ...(statusFilter !== 'all' && { status: statusFilter }),
+    ...(effectiveBranchId && { branchId: effectiveBranchId }),
+  };
+
+  // Don't fetch orders until branch is selected (prevents showing all orders briefly)
   const { data: orders, isLoading, error } = useOrders(
-    statusFilter !== 'all' ? { status: statusFilter } : undefined
+    effectiveBranchId ? filters : undefined,
+    !!effectiveBranchId // Only enable query when branch is selected
   );
 
   // Filter orders by search query
@@ -173,7 +190,11 @@ export function OrdersContent() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Orders</h1>
           <p className="text-muted-foreground">
-            Manage service orders and track their status.
+            {user?.role === 'technician'
+              ? 'Manage orders assigned to your branch'
+              : selectedBranch
+                ? `Manage orders for ${selectedBranch.name}`
+                : 'Manage service orders and track their status.'}
           </p>
         </div>
         <Button asChild>
@@ -213,10 +234,12 @@ export function OrdersContent() {
       </div>
 
       {/* Orders Table */}
-      {isLoading ? (
+      {isBranchLoading || isLoading ? (
         <div className="flex h-64 items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          <span className="ml-2 text-muted-foreground">Loading orders...</span>
+          <span className="ml-2 text-muted-foreground">
+            {isBranchLoading ? 'Loading branch...' : 'Loading orders...'}
+          </span>
         </div>
       ) : error ? (
         <div className="flex h-64 items-center justify-center">

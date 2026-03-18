@@ -64,6 +64,9 @@ export function useDashboardStats(filters?: KPIFilters) {
         .from('orders')
         .select('id, status, quoted_price, created_at');
 
+      if (filters?.branchId) {
+        ordersQuery = ordersQuery.eq('branch_id', filters.branchId);
+      }
       if (dateFrom) {
         ordersQuery = ordersQuery.gte('created_at', dateFrom);
       }
@@ -76,10 +79,16 @@ export function useDashboardStats(filters?: KPIFilters) {
       if (ordersError) throw ordersError;
 
       // Get technicians
-      const { data: technicians, error: techError } = await supabase
+      let techQuery = supabase
         .from('users')
         .select('id, is_active')
         .eq('role', 'technician');
+
+      if (filters?.branchId) {
+        techQuery = techQuery.eq('branch_id', filters.branchId);
+      }
+
+      const { data: technicians, error: techError } = await techQuery;
 
       if (techError) throw techError;
 
@@ -119,11 +128,17 @@ export function useEnhancedTechnicianStats(filters?: KPIFilters) {
       const { dateFrom, dateTo } = getDateRange(filters);
 
       // Get technicians
-      const { data: technicians, error: techError } = await supabase
+      let techQuery = supabase
         .from('users')
         .select('id, name, avatar_url')
         .eq('role', 'technician')
         .eq('is_active', true);
+
+      if (filters?.branchId) {
+        techQuery = techQuery.eq('branch_id', filters.branchId);
+      }
+
+      const { data: technicians, error: techError } = await techQuery;
 
       if (techError) throw techError;
 
@@ -140,6 +155,9 @@ export function useEnhancedTechnicianStats(filters?: KPIFilters) {
           .select('id, status, quoted_price, created_at')
           .eq('assigned_technician_id', tech.id);
 
+        if (filters?.branchId) {
+          query = query.eq('branch_id', filters.branchId);
+        }
         if (dateFrom) {
           query = query.gte('created_at', dateFrom);
         }
@@ -151,18 +169,30 @@ export function useEnhancedTechnicianStats(filters?: KPIFilters) {
         const orderList = orders || [];
 
         // Get orders this week
-        const { data: weekOrders } = await supabase
+        let weekQuery = supabase
           .from('orders')
           .select('id')
           .eq('assigned_technician_id', tech.id)
           .gte('created_at', weekAgo.toISOString());
 
+        if (filters?.branchId) {
+          weekQuery = weekQuery.eq('branch_id', filters.branchId);
+        }
+
+        const { data: weekOrders } = await weekQuery;
+
         // Get orders this month
-        const { data: monthOrders } = await supabase
+        let monthQuery = supabase
           .from('orders')
           .select('id, quoted_price, status')
           .eq('assigned_technician_id', tech.id)
           .gte('created_at', monthStart.toISOString());
+
+        if (filters?.branchId) {
+          monthQuery = monthQuery.eq('branch_id', filters.branchId);
+        }
+
+        const { data: monthOrders } = await monthQuery;
 
         const totalJobs = orderList.length;
         const completedJobs = orderList.filter(
@@ -220,11 +250,17 @@ export function useLeaderboard(filters?: KPIFilters) {
       const { dateFrom, dateTo } = getDateRange(filters);
 
       // Get technicians
-      const { data: technicians, error: techError } = await supabase
+      let techQuery = supabase
         .from('users')
         .select('id, name, avatar_url')
         .eq('role', 'technician')
         .eq('is_active', true);
+
+      if (filters?.branchId) {
+        techQuery = techQuery.eq('branch_id', filters.branchId);
+      }
+
+      const { data: technicians, error: techError } = await techQuery;
 
       if (techError) throw techError;
 
@@ -236,6 +272,9 @@ export function useLeaderboard(filters?: KPIFilters) {
           .select('id, status, quoted_price')
           .eq('assigned_technician_id', tech.id);
 
+        if (filters?.branchId) {
+          query = query.eq('branch_id', filters.branchId);
+        }
         if (dateFrom) {
           query = query.gte('created_at', dateFrom);
         }
@@ -287,12 +326,18 @@ export function useJobsChartData(filters?: KPIFilters) {
       const { dateFrom, dateTo } = getDateRange(filters);
 
       // Get technicians
-      const { data: technicians } = await supabase
+      let techQuery = supabase
         .from('users')
         .select('id, name')
         .eq('role', 'technician')
         .eq('is_active', true)
         .limit(10); // Limit for chart readability
+
+      if (filters?.branchId) {
+        techQuery = techQuery.eq('branch_id', filters.branchId);
+      }
+
+      const { data: technicians } = await techQuery;
 
       const chartData: JobsChartData[] = [];
 
@@ -302,6 +347,9 @@ export function useJobsChartData(filters?: KPIFilters) {
           .select('id, status')
           .eq('assigned_technician_id', tech.id);
 
+        if (filters?.branchId) {
+          query = query.eq('branch_id', filters.branchId);
+        }
         if (dateFrom) {
           query = query.gte('created_at', dateFrom);
         }
@@ -344,6 +392,9 @@ export function useRevenueChartData(filters?: KPIFilters) {
         .select('quoted_price, created_at, status')
         .in('status', ['job_done', 'reviewed', 'closed']);
 
+      if (filters?.branchId) {
+        query = query.eq('branch_id', filters.branchId);
+      }
       if (dateFrom) {
         query = query.gte('created_at', dateFrom);
       }

@@ -209,7 +209,7 @@ export default function ActiveProjectsPage() {
       label: 'Delete',
       icon: Trash2,
       variant: 'destructive',
-      onClick: row => console.log('Delete:', row.id),
+      onClick: row => router.push(`/projects/${row.id}/delete`),
     },
   ];
 

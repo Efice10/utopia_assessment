@@ -50,7 +50,6 @@ export default function NewProjectPage() {
 
   const onSubmit = async (data: FormData) => {
     // Simulate API call
-    console.log('Creating project:', data);
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     // Navigate back to list page after success

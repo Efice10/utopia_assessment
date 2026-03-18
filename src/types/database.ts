@@ -221,6 +221,7 @@ export interface Branch {
   address: string;
   phone: string | null;
   is_active: boolean;
+  is_hq: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -231,6 +232,7 @@ export interface BranchInsert {
   address: string;
   phone?: string | null;
   is_active?: boolean;
+  is_hq?: boolean;
 }
 
 export interface BranchUpdate {
@@ -238,6 +240,7 @@ export interface BranchUpdate {
   address?: string;
   phone?: string | null;
   is_active?: boolean;
+  is_hq?: boolean;
 }
 
 // ===========================================

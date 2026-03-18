@@ -67,15 +67,11 @@ export async function POST(request: NextRequest) {
 
             // Check for tool calls
             const toolCalls = parseToolCalls(fullResponse);
-            console.log('[AI Query] Full response:', fullResponse.substring(0, 500));
-            console.log('[AI Query] Tool calls found:', toolCalls);
 
             if (toolCalls && toolCalls.length > 0) {
               // Execute the first tool call
               const { tool, params } = toolCalls[0];
-              console.log('[AI Query] Executing tool:', tool, 'with params:', params);
               const result = await executeTool(tool, params, supabase);
-              console.log('[AI Query] Tool result:', result);
 
               // Generate a natural language response about the result
               const resultPrompt = `You just executed a tool call. Here is the result:
@@ -121,15 +117,11 @@ Please summarize this result for the user in a friendly way. Do not include any 
 
       // Check for tool calls
       const toolCalls = parseToolCalls(response);
-      console.log('[AI Query] Non-streaming response:', response.substring(0, 500));
-      console.log('[AI Query] Tool calls found:', toolCalls);
 
       if (toolCalls && toolCalls.length > 0) {
         // Execute the first tool call
         const { tool, params } = toolCalls[0];
-        console.log('[AI Query] Executing tool:', tool, 'with params:', params);
         const result = await executeTool(tool, params, supabase);
-        console.log('[AI Query] Tool result:', result);
 
         // Generate a natural language response about the result
         const resultPrompt = `You just executed a tool call. Here is the result:

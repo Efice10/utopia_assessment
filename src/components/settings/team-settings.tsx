@@ -133,7 +133,6 @@ export function TeamSettings() {
     try {
       // TODO: Implement API call to invite team member
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log('Inviting:', data.email);
       reset();
     } catch {
       throw new Error('Failed to send invitation');
@@ -142,12 +141,10 @@ export function TeamSettings() {
 
   const handleRemoveMember = (memberId: string) => {
     // TODO: Implement remove member functionality
-    console.log('Remove member:', memberId);
   };
 
   const handleChangeRole = (memberId: string, newRole: string) => {
     // TODO: Implement change role functionality
-    console.log('Change role:', memberId, newRole);
   };
 
   return (

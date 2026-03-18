@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+
 import Link from 'next/link';
 
 import { motion } from 'framer-motion';
@@ -16,8 +17,13 @@ import {
   Loader2,
   TrendingUp,
   Trophy,
+  Building2,
 } from 'lucide-react';
 
+import { JobsChart } from '@/components/dashboard/jobs-chart';
+import { KPIFilters } from '@/components/dashboard/kpi-filters';
+import { LeaderboardTable } from '@/components/dashboard/leaderboard-table';
+import { RevenueChart } from '@/components/dashboard/revenue-chart';
 import {
   PageHeader,
   PageTransition,
@@ -26,13 +32,10 @@ import {
   SimpleGlassCard,
   StatusBadge } from '@/components/shared';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { KPIFilters } from '@/components/dashboard/kpi-filters';
-import { JobsChart } from '@/components/dashboard/jobs-chart';
-import { RevenueChart } from '@/components/dashboard/revenue-chart';
-import { LeaderboardTable } from '@/components/dashboard/leaderboard-table';
-import { useOrders, useTechnicians, useLeaderboard, useJobsChartData, useRevenueChartData } from '@/hooks';
+import { useOrders, useTechnicians, useLeaderboard, useJobsChartData, useRevenueChartData, useSelectedBranch } from '@/hooks';
 import { useAuthStore } from '@/lib/auth-store';
 import type { KPIFilters as KPIFiltersType } from '@/types/kpi';
 
@@ -64,15 +67,23 @@ function getStatusBadgeVariant(status: string): 'warning' | 'info' | 'success' |
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
+  const { selectedBranchId, selectedBranch, isHQ } = useSelectedBranch();
   const [kpiFilters, setKpiFilters] = useState<KPIFiltersType>({
     period: 'all_time',
   });
 
-  const { data: orders, isLoading: ordersLoading } = useOrders();
-  const { data: technicians, isLoading: techniciansLoading } = useTechnicians();
-  const { data: leaderboard, isLoading: leaderboardLoading } = useLeaderboard(kpiFilters);
-  const { data: jobsChartData, isLoading: jobsChartLoading } = useJobsChartData(kpiFilters);
-  const { data: revenueChartData, isLoading: revenueChartLoading } = useRevenueChartData(kpiFilters);
+  // Build filters with branch
+  const orderFilters = selectedBranchId ? { branchId: selectedBranchId } : undefined;
+  const kpiFiltersWithBranch: KPIFiltersType = {
+    ...kpiFilters,
+    branchId: selectedBranchId ?? undefined,
+  };
+
+  const { data: orders, isLoading: ordersLoading } = useOrders(orderFilters);
+  const { data: technicians, isLoading: techniciansLoading } = useTechnicians(selectedBranchId ?? undefined);
+  const { data: leaderboard, isLoading: leaderboardLoading } = useLeaderboard(kpiFiltersWithBranch);
+  const { data: jobsChartData, isLoading: jobsChartLoading } = useJobsChartData(kpiFiltersWithBranch);
+  const { data: revenueChartData, isLoading: revenueChartLoading } = useRevenueChartData(kpiFiltersWithBranch);
 
   const isLoading = ordersLoading || techniciansLoading;
 
@@ -106,14 +117,27 @@ export default function DashboardPage() {
         {/* Page Header */}
         <PageHeader
           title={`Welcome${user?.name ? `, ${user.name}` : ''}!`}
-          description="Here's an overview of your operations."
+          description={
+            selectedBranch
+              ? `Overview for ${selectedBranch.name}${isHQ ? ' (HQ - All Branches)' : ''}`
+              : "Here's an overview of your operations."
+          }
         >
-          <Link href='/orders/new'>
-            <Button>
-              <Plus className='mr-2 h-4 w-4' />
-              New Order
-            </Button>
-          </Link>
+          <div className='flex items-center gap-2'>
+            {selectedBranch && (
+              <Badge variant='outline' className='gap-1'>
+                <Building2 className='h-3 w-3' />
+                {selectedBranch.name}
+                {isHQ && <span className='text-primary'>(HQ)</span>}
+              </Badge>
+            )}
+            <Link href='/orders/new'>
+              <Button>
+                <Plus className='mr-2 h-4 w-4' />
+                New Order
+              </Button>
+            </Link>
+          </div>
         </PageHeader>
 
         {/* Stats Cards */}
