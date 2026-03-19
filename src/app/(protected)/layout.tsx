@@ -81,7 +81,7 @@ export default function ProtectedLayout({
             <DynamicBreadcrumb />
           </div>
           <div className='flex items-center gap-2 px-4'>
-            <NotificationBell />
+            {/* <NotificationBell /> */}
             <ThemeToggle />
             <HeaderUser
               user={{

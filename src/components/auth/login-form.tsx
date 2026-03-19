@@ -113,14 +113,14 @@ export function LoginForm({
       </form>
 
       {/* Footer */}
-      <div className='text-center text-sm text-muted-foreground'>
+      {/* <div className='text-center text-sm text-muted-foreground'>
         <p>
           Don&apos;t have an account?{' '}
           <a href='/signup' className='text-primary hover:underline'>
             Sign up
           </a>
         </p>
-      </div>
+      </div> */}
     </div>
   );
 }

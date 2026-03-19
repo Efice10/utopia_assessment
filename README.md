@@ -392,6 +392,85 @@ npm run ci           # Run full CI pipeline
 
 ---
 
+## Developer Reflections
+
+### Which Module Was Easiest?
+
+The **Orders Management** module was the most straightforward:
+- Clear CRUD operations with Supabase
+- Well-defined schema from the start
+- Status flow is intuitive (`NEW` → `ASSIGNED` → `IN_PROGRESS` → `JOB_DONE` → `REVIEWED` → `CLOSED`)
+- TanStack Query + React Hook Form + Zod made form handling straightforward
+
+### Which Module Was Hardest?
+
+The **AI Assistant with Database Access** module presented the most challenges:
+- **Problem**: AI has tools that can create, update, and delete orders directly in the database - this is risky because AI could potentially:
+  - Delete important data unintentionally
+  - Update records with incorrect information
+  - Create duplicate or invalid orders
+  - Modify data outside the user's intent
+- **Security Concerns**:
+  - AI has too much power over database operations
+  - No confirmation step before destructive actions
+  - No rollback mechanism if AI makes mistakes
+  - No audit trail specifically for AI-initiated changes
+- **Solutions Implemented**:
+  - AI tools have defined schemas with Zod validation
+  - Tools only access specific tables (orders, not users)
+  - Read-only operations (anomaly detection, insights) are separated from write operations
+- **What's Still Missing**:
+  - Confirmation dialog before AI executes destructive actions
+  - Role-based restrictions on which AI tools are available
+  - Rate limiting on AI database operations
+  - Audit log entries tagged as "AI-initiated"
+  - Undo/rollback for AI actions
+
+### What Would I Improve in a Real Production System?
+
+| Area | Improvement |
+|------|-------------|
+| **Database Security** | Apply RLS policies in Supabase - never rely solely on frontend checks |
+| **File Storage** | Integrate Supabase Storage for job photos, receipts, and documents |
+| **Notifications** | WhatsApp Business API, SMS provider (Twilio), Email (SendGrid/Resend) with queue and retry |
+| **Real-time Updates** | Supabase Realtime for live dashboard updates and job status changes |
+| **Caching** | Redis for frequently accessed data (technician stats, dashboard KPIs) |
+| **Chat Persistence** | Store AI conversations in database for history and context |
+| **Error Handling** | Global error boundary, structured logging, monitoring (Sentry) |
+| **Testing** | Unit tests for hooks and components, E2E tests for critical flows |
+| **Rate Limiting** | API rate limiting for AI queries |
+
+### How AI Tools Were Used During Development
+
+**Code Generation:**
+- Generated React components following existing project patterns
+- Created form validation schemas using Zod
+- Wrote custom hooks for data fetching with TanStack Query
+
+**Code Review & Analysis:**
+- Identified security gaps in technician access control
+- Found hardcoded fallback IDs (`'tech-001'`) that needed removal
+- Spotted missing `branch_id` assignment in technician creation
+- Analyzed existing codebase structure and patterns
+
+**Documentation:**
+- Generated comprehensive README documentation
+- Documented architecture decisions and limitations
+- Created detailed explanations for challenges and solutions
+
+**Refactoring:**
+- Improved technician jobs list with proper filtering by technician ID
+- Added ownership verification to job completion form
+- Fixed PasswordManagement flow with forced change on first Login
+
+**AI Limitations Encountered:**
+- Sometimes generated code didn't match existing patterns - needed manual adjustments
+- Complex state management (Zustand + React Query) required careful review
+- Security-critical code (auth flows, access control) always needs human verification
+- Understanding business logic (order statuses, role permissions) required clarification
+
+---
+
 ## Environment Variables
 
 ```env
@@ -407,19 +486,3 @@ AI_MODEL=glm-5
 # App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
-
----
-
-## License
-
-This project is proprietary and confidential.
-
----
-
-## Acknowledgments
-
-- [Next.js](https://nextjs.org/) - The React Framework
-- [Supabase](https://supabase.com/) - Open Source Firebase Alternative
-- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS
-- [Radix UI](https://www.radix-ui.com/) - Accessible UI Primitives
-- [Lucide](https://lucide.dev/) - Beautiful Icons
