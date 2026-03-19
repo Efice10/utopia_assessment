@@ -8,3 +8,4 @@ export * from './use-kpi-stats';
 export * from './use-branches';
 export * from './use-selected-branch';
 export * from './use-user-branches';
+export * from './use-create-technician';

@@ -5,6 +5,7 @@ export interface User {
   avatar?: string;
   role?: 'user' | 'admin' | 'technician' | 'manager';
   branch_id?: string | null;
+  must_change_password?: boolean;
 }
 
 export interface LoginCredentials {

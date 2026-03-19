@@ -35,6 +35,10 @@ export function LoginForm({
 
     if (result.error) {
       setError(result.error);
+    } else if (result.mustChangePassword) {
+      // Redirect to change password page if user must change password
+      router.push('/change-password');
+      router.refresh();
     } else {
       router.push(redirect);
       router.refresh();

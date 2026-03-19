@@ -9,6 +9,9 @@ import {
   Loader2,
   Building2,
   Plus,
+  Eye,
+  EyeOff,
+  Lock,
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -33,11 +36,14 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { useCreateUser, useAddUserBranch, useBranches } from '@/hooks';
+import { useCreateTechnician, useBranches } from '@/hooks';
 import { useAuthStore } from '@/lib/auth-store';
 
 // Malaysian phone number regex
 const phoneRegex = /^(\+?6?01)[0-46-9]\d{8,9}$/;
+
+// Password validation regex
+const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
 
 const technicianSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -53,6 +59,16 @@ const technicianSchema = z.object({
   notes: z.string().optional(),
   branch_id: z.string().min(1, 'Branch is required'),
   is_active: z.boolean(),
+  password: z
+    .string()
+    .min(6, 'Password must be at least 6 characters')
+    .regex(passwordRegex, {
+      message: 'Password must contain uppercase, lowercase, and number',
+    }),
+  confirm_password: z.string(),
+}).refine((data) => data.password === data.confirm_password, {
+  message: 'Passwords do not match',
+  path: ['confirm_password'],
 });
 
 type TechnicianFormData = z.infer<typeof technicianSchema>;
@@ -64,8 +80,9 @@ interface TechnicianFormProps {
 export function TechnicianForm({ onSuccess }: TechnicianFormProps) {
   const router = useRouter();
   const [isActive, setIsActive] = useState(true);
-  const createUser = useCreateUser();
-  const addUserBranch = useAddUserBranch();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const createTechnician = useCreateTechnician();
   const { user } = useAuthStore();
   const { data: branches, isLoading: branchesLoading } = useBranches();
 
@@ -93,6 +110,8 @@ export function TechnicianForm({ onSuccess }: TechnicianFormProps) {
       notes: '',
       branch_id: defaultBranchId ?? '',
       is_active: true,
+      password: '',
+      confirm_password: '',
     },
   });
 
@@ -100,24 +119,21 @@ export function TechnicianForm({ onSuccess }: TechnicianFormProps) {
 
   const onSubmit = async (data: TechnicianFormData) => {
     try {
-      // Create the user
-      const newUser = await createUser.mutateAsync({
+      await createTechnician.mutateAsync({
         name: data.name,
         email: data.email,
         phone: data.phone,
-        role: 'technician',
+        password: data.password,
+        address: data.address,
+        ic_number: data.ic_number,
+        specialties: data.specialties,
+        notes: data.notes,
+        branch_id: data.branch_id,
         is_active: data.is_active,
       });
 
-      // Assign branch to the technician
-      await addUserBranch.mutateAsync({
-        userId: newUser.id,
-        branchId: data.branch_id,
-        isPrimary: true,
-      });
-
       toast.success('Technician created successfully', {
-        description: `${data.name} has been added as a technician.`,
+        description: `${data.name} can now log in with the provided credentials. They will be required to change their password on first login.`,
       });
 
       onSuccess?.();
@@ -229,6 +245,77 @@ export function TechnicianForm({ onSuccess }: TechnicianFormProps) {
               {errors.address && (
                 <p className="text-sm text-destructive">{errors.address.message}</p>
               )}
+            </div>
+          </div>
+
+          {/* Login Credentials */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Lock className="h-4 w-4" />
+              Login Credentials
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Set a temporary password. The technician will be required to change it on first login.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="password">
+                  Temporary Password <span className="text-destructive">*</span>
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Min 6 chars, with uppercase, lowercase & number"
+                    {...register('password')}
+                    className={errors.password ? 'border-destructive pr-10' : 'pr-10'}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="text-sm text-destructive">{errors.password.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm_password">
+                  Confirm Password <span className="text-destructive">*</span>
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="confirm_password"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="Confirm the password"
+                    {...register('confirm_password')}
+                    className={errors.confirm_password ? 'border-destructive pr-10' : 'pr-10'}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+                {errors.confirm_password && (
+                  <p className="text-sm text-destructive">
+                    {errors.confirm_password.message}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -350,12 +437,12 @@ export function TechnicianForm({ onSuccess }: TechnicianFormProps) {
               type="button"
               variant="outline"
               onClick={() => router.push('/technicians')}
-              disabled={createUser.isPending}
+              disabled={createTechnician.isPending}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={createUser.isPending}>
-              {createUser.isPending ? (
+            <Button type="submit" disabled={createTechnician.isPending}>
+              {createTechnician.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Creating...

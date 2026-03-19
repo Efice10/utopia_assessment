@@ -89,6 +89,7 @@ export interface User {
   branch_id: string | null;
   avatar_url: string | null;
   is_active: boolean;
+  must_change_password: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -102,6 +103,7 @@ export interface UserInsert {
   branch_id?: string | null;
   avatar_url?: string | null;
   is_active?: boolean;
+  must_change_password?: boolean;
 }
 
 export interface UserUpdate {
@@ -112,6 +114,7 @@ export interface UserUpdate {
   branch_id?: string | null;
   avatar_url?: string | null;
   is_active?: boolean;
+  must_change_password?: boolean;
 }
 
 // ===========================================

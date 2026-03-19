@@ -8,6 +8,9 @@ const protectedRoutes = ['/orders', '/jobs', '/dashboard', '/team', '/projects',
 // Auth routes (redirect away if already logged in)
 const authRoutes = ['/login', '/signup', '/forgot-password'];
 
+// Routes that don't require password change check
+const skipPasswordCheckRoutes = ['/change-password', '/api'];
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request,
@@ -56,12 +59,34 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Auth routes - redirect if already authenticated
+  // Check if user must change password (only for authenticated users on protected routes)
+  if (isAuthenticated && isProtectedRoute) {
+    // Check if this route should skip password check
+    const shouldSkipPasswordCheck = skipPasswordCheckRoutes.some((route) =>
+      pathname.startsWith(route)
+    );
+
+    if (!shouldSkipPasswordCheck) {
+      // Check must_change_password cookie set by client
+      const mustChangePasswordCookie = request.cookies.get('must_change_password');
+
+      if (mustChangePasswordCookie?.value === 'true') {
+        const url = request.nextUrl.clone();
+        url.pathname = '/change-password';
+        return NextResponse.redirect(url);
+      }
+    }
+  }
+
+  // Auth routes - redirect if already authenticated (but not if must change password)
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
   if (isAuthRoute && isAuthenticated) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
-    return NextResponse.redirect(url);
+    const mustChangePasswordCookie = request.cookies.get('must_change_password');
+    if (mustChangePasswordCookie?.value !== 'true') {
+      const url = request.nextUrl.clone();
+      url.pathname = '/dashboard';
+      return NextResponse.redirect(url);
+    }
   }
 
   return response;
