@@ -11,7 +11,6 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
-  ExternalLink,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -21,22 +20,13 @@ import {
   useSendNotification,
   useMarkNotificationSent,
 } from '@/hooks/use-notifications';
-import type { NotificationLog, NotificationTriggerEvent, RecipientType } from '@/types/notification';
+import type { NotificationTriggerEvent, RecipientType } from '@/types/notification';
 
 interface NotificationHistoryProps {
   orderId: string;
   customerPhone?: string;
   technicianId?: string;
 }
-
-const eventLabels: Record<NotificationTriggerEvent, string> = {
-  order_created: 'Order Created',
-  order_assigned: 'Technician Assigned',
-  order_started: 'Job Started',
-  job_completed: 'Job Completed',
-  order_reviewed: 'Order Reviewed',
-  payment_received: 'Payment Received',
-};
 
 const recipientLabels: Record<RecipientType, string> = {
   customer: 'Customer',

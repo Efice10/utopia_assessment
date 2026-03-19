@@ -54,7 +54,7 @@ export default function AuthLayout({
             >
               <GalleryVerticalEnd className='size-4' />
             </motion.div>
-            Acme Inc.
+            Sejuk-Sejuk
           </Link>
         </div>
         <div className='flex flex-1 items-center justify-center'>

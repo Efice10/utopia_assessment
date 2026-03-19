@@ -10,7 +10,6 @@ import {
   Plus,
   Search,
   Shield,
-  Trash2,
   UserMinus,
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -31,7 +30,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 
 const inviteSchema = z.object({
@@ -129,7 +127,7 @@ export function TeamSettings() {
       member.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const onInviteSubmit = async (data: InviteFormData) => {
+  const onInviteSubmit = async (_data: InviteFormData) => {
     try {
       // TODO: Implement API call to invite team member
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -139,11 +137,11 @@ export function TeamSettings() {
     }
   };
 
-  const handleRemoveMember = (memberId: string) => {
+  const handleRemoveMember = (_memberId: string) => {
     // TODO: Implement remove member functionality
   };
 
-  const handleChangeRole = (memberId: string, newRole: string) => {
+  const handleChangeRole = (_memberId: string, _newRole: string) => {
     // TODO: Implement change role functionality
   };
 

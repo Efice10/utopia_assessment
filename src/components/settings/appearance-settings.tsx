@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import { Check, Monitor, Moon, Palette, Sun } from 'lucide-react';
+import { Check, Monitor, Moon, Sun } from 'lucide-react';
 
 import {
   AnimatedSettingsCard,

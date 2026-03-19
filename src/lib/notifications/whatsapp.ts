@@ -19,7 +19,7 @@ export function generateWhatsAppUrl(phone: string | undefined, message: string):
   // Otherwise, use wa.me/?text= for sharing without a specific recipient
   if (phone) {
     // Clean phone number: remove spaces, dashes, parentheses
-    const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+    const cleanPhone = phone.replace(/[\s\-()]/g, '');
 
     // Ensure phone starts with country code (default to Malaysia +60)
     let formattedPhone = cleanPhone;

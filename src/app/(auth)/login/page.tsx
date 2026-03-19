@@ -1,3 +1,5 @@
+import { Suspense } from 'react';
+
 import { LoginForm } from '@/components/auth/login-form';
 import { AnimatedPage } from '@/components/ui/animated-page';
 
@@ -12,7 +14,9 @@ export const metadata: Metadata = {
 export default function LoginPage() {
   return (
     <AnimatedPage animation='slide-horizontal'>
-      <LoginForm />
+      <Suspense fallback={<div className='flex items-center justify-center min-h-[400px]'>Loading...</div>}>
+        <LoginForm />
+      </Suspense>
     </AnimatedPage>
   );
 }

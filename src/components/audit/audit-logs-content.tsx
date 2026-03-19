@@ -104,12 +104,63 @@ export function AuditLogsContent() {
     totalPages: 0,
   });
 
+  // Refresh trigger for manual refetch
+  const [refreshKey, setRefreshKey] = useState(0);
+
   // Admin-only access check
   useEffect(() => {
     if (initialized && user?.role !== 'admin') {
       router.push('/orders');
     }
   }, [initialized, user, router]);
+
+  // Fetch logs effect - must be before any early returns
+  useEffect(() => {
+    if (!initialized || user?.role !== 'admin') return;
+
+    const fetchLogs = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const params = new URLSearchParams();
+        params.set('page', page.toString());
+        params.set('limit', '50');
+        if (actionFilter && actionFilter !== 'all') {
+          params.set('action', actionFilter);
+        }
+        if (entityFilter && entityFilter !== 'all') {
+          params.set('entity', entityFilter);
+        }
+        if (search) {
+          params.set('search', search);
+        }
+        if (dateFrom) {
+          params.set('date_from', dateFrom);
+        }
+        if (dateTo) {
+          params.set('date_to', dateTo);
+        }
+
+        const response = await fetch(`/api/audit-logs?${params.toString()}`);
+        const data: ApiResponse = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch audit logs');
+        }
+
+        setLogs(data.data);
+        setPagination(data.pagination);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLogs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialized, user, page, actionFilter, entityFilter, dateFrom, dateTo, refreshKey]);
 
   // Show loading while checking auth
   if (!initialized || user?.role !== 'admin') {
@@ -124,57 +175,13 @@ export function AuditLogsContent() {
     );
   }
 
-  const fetchLogs = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const params = new URLSearchParams();
-      params.set('page', page.toString());
-      params.set('limit', '50');
-      if (actionFilter && actionFilter !== 'all') {
-        params.set('action', actionFilter);
-      }
-      if (entityFilter && entityFilter !== 'all') {
-        params.set('entity', entityFilter);
-      }
-      if (search) {
-        params.set('search', search);
-      }
-      if (dateFrom) {
-        params.set('date_from', dateFrom);
-      }
-      if (dateTo) {
-        params.set('date_to', dateTo);
-      }
-
-      const response = await fetch(`/api/audit-logs?${params.toString()}`);
-      const data: ApiResponse = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch audit logs');
-      }
-
-      setLogs(data.data);
-      setPagination(data.pagination);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchLogs();
-  }, [page, actionFilter, entityFilter, dateFrom, dateTo]);
-
   const handleSearch = () => {
     setPage(1);
-    fetchLogs();
+    setRefreshKey((k) => k + 1);
   };
 
   const handleRefresh = () => {
-    fetchLogs();
+    setRefreshKey((k) => k + 1);
   };
 
   const formatTimestamp = (timestamp: string) => {

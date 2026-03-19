@@ -11,11 +11,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import type { TimePeriodPreset, KPIFilters } from '@/types/kpi';
+import type { TimePeriodPreset, KPIFilters as KPIFiltersType } from '@/types/kpi';
 
 interface KPIFiltersProps {
-  filters: KPIFilters;
-  onFiltersChange: (filters: KPIFilters) => void;
+  filters: KPIFiltersType;
+  onFiltersChange: (filters: KPIFiltersType) => void;
 }
 
 const periodLabels: Record<TimePeriodPreset, string> = {

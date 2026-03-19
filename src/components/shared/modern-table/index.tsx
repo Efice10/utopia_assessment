@@ -628,7 +628,7 @@ export function ModernTable<T>({
                       const selectedData = data.filter(row =>
                         selectedRows.includes(keyExtractor(row))
                       );
-                      (action as RowAction<T[]>).onClick(selectedData);
+                      (action as RowAction<T[]>).onClick?.(selectedData);
                     }}
                   >
                     {action.icon && <action.icon className='h-3.5 w-3.5' />}

@@ -60,7 +60,7 @@ export async function sendOrderNotification(
     const variables = buildTemplateVariables(orderWithRelations, recipientType);
 
     // Render message
-    const message = customMessage || (template ? renderTemplate(template.template_body, variables) : '');
+    const message = customMessage || (template ? renderTemplate(template.template_body, variables as Record<string, string | number | undefined>) : '');
 
     // Determine recipient phone
     const { phone, recipientName } = getRecipientInfo(orderWithRelations, recipientType);
@@ -158,7 +158,7 @@ export async function getNotificationHistory(
  */
 function buildTemplateVariables(
   order: OrderWithRelations,
-  recipientType: RecipientType
+  _recipientType: RecipientType
 ): TemplateVariables {
   return {
     order_no: order.order_no,
@@ -235,7 +235,7 @@ export const notificationHelpers = {
    */
   async notifyManagerJobDone(
     orderId: string,
-    managerPhone: string,
+    _managerPhone: string,
     supabase: ReturnType<typeof getSupabaseBrowserClient>
   ): Promise<SendNotificationResponse> {
     // For manager notifications, we'd need the manager's phone

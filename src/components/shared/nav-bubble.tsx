@@ -38,7 +38,7 @@ export function NavBubbleContainer({ children, className }: NavBubbleContainerPr
     });
 
     if (closestItem) {
-      const itemRect = closestItem.getBoundingClientRect();
+      const itemRect = (closestItem as Element).getBoundingClientRect();
       bubble.style.top = `${itemRect.top - rect.top}px`;
       bubble.style.left = `${itemRect.left - rect.left}px`;
       bubble.style.width = `${itemRect.width}px`;

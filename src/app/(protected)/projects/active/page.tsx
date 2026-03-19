@@ -12,7 +12,6 @@ import {
   Pencil,
   Plus,
   Trash2,
-  AlertCircle,
 } from 'lucide-react';
 
 import {

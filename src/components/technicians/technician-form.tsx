@@ -7,11 +7,7 @@ import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Loader2,
-  UserPlus,
   Building2,
-  MapPin,
-  Briefcase,
-  Wrench,
   Plus,
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';

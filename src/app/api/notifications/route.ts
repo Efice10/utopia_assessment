@@ -3,9 +3,8 @@ import { NextResponse } from 'next/server';
 
 import {
   sendOrderNotification,
-  getNotificationHistory,
 } from '@/lib/notifications/service';
-import { createClient } from '@/lib/supabase/server';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type { NotificationTriggerEvent, RecipientType } from '@/types/notification';
 
 /**
@@ -14,7 +13,7 @@ import type { NotificationTriggerEvent, RecipientType } from '@/types/notificati
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const supabase = await createSupabaseServerClient();
     const {searchParams} = request.nextUrl;
 
     // Check authentication
@@ -67,7 +66,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const supabase = await createSupabaseServerClient();
 
     // Check authentication
     const {

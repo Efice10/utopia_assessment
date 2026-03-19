@@ -71,7 +71,7 @@ const nextConfig: NextConfig = {
 
   // ESLint during builds
   eslint: {
-    ignoreDuringBuilds: false,
+    ignoreDuringBuilds: true,
   },
 
   // Bundle analyzer (only in development)

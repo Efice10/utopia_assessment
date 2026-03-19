@@ -13,7 +13,7 @@ type StatCardVariant = 'default' | 'success' | 'warning' | 'danger' | 'info' | '
 function useAnimatedCounter(end: number, duration: number = 1000) {
   const [count, setCount] = React.useState(0);
   const countRef = React.useRef(0);
-  const frameRef = React.useRef<number>();
+  const frameRef = React.useRef<number | undefined>(undefined);
 
   React.useEffect(() => {
     const startTime = performance.now();
@@ -313,6 +313,7 @@ function AnimatedProgressBar({
       }, 100);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [percentage, animate]);
 
   const gradientClass = {
@@ -355,6 +356,7 @@ function AnimatedProgressRing({
       }, 100);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [percentage, animate]);
 
   const strokeWidth = 8;

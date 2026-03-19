@@ -50,8 +50,8 @@ export function GeneralSettings() {
   } = useForm<GeneralSettingsData>({
     resolver: zodResolver(generalSettingsSchema),
     defaultValues: {
-      organizationName: 'Acme Inc',
-      website: 'https://acme.com',
+      organizationName: 'Sejuk-Sejuk',
+      website: 'https://sejuk-sejuk.com',
       description: 'A forward-thinking company building the future.',
       language: 'en',
       timezone: 'UTC',

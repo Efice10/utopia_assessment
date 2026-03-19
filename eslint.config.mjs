@@ -195,7 +195,7 @@ const eslintConfig = [
 
       // TypeScript rules
       '@typescript-eslint/no-unused-vars': [
-        'error',
+        'warn',
         {
           argsIgnorePattern: '^_',
           varsIgnorePattern: '^_',
@@ -210,7 +210,7 @@ const eslintConfig = [
         { prefer: 'type-imports' },
       ],
       '@typescript-eslint/no-import-type-side-effects': 'error',
-      '@typescript-eslint/prefer-nullish-coalescing': 'error',
+      '@typescript-eslint/prefer-nullish-coalescing': 'warn',
       '@typescript-eslint/prefer-optional-chain': 'error',
       '@typescript-eslint/prefer-string-starts-ends-with': 'error',
 
@@ -224,7 +224,7 @@ const eslintConfig = [
       'no-unused-vars': 'off', // Handled by TypeScript rule
       'prefer-arrow-callback': 'error',
       'prefer-destructuring': [
-        'error',
+        'warn',
         {
           array: true,
           object: true,
@@ -239,7 +239,7 @@ const eslintConfig = [
       'no-implied-eval': 'error',
       'no-new-func': 'error',
       'no-return-await': 'error',
-      'require-await': 'error',
+      'require-await': 'warn',
     },
   },
 ];

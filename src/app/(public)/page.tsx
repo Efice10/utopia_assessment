@@ -463,7 +463,7 @@ export default function Home() {
         <div className='container mx-auto px-4'>
           <div className='grid gap-8 md:grid-cols-4'>
             <div>
-              <h3 className='mb-4 text-xl font-bold'>ForceHero</h3>
+              <h3 className='mb-4 text-xl font-bold'>Sejuk-Sejuk</h3>
               <p className='mb-4 text-gray-400'>
                 Empowering businesses with AI-powered analytics and insights.
               </p>
@@ -551,7 +551,7 @@ export default function Home() {
           <Separator className='my-8 bg-gray-800' />
           <div className='flex flex-col items-center justify-between md:flex-row'>
             <p className='text-sm text-gray-400'>
-              © 2025 ForceHero. All rights reserved.
+              © 2025 Sejuk-Sejuk. All rights reserved.
             </p>
             <div className='mt-4 flex space-x-6 text-sm text-gray-400 md:mt-0'>
               <Link href='#' className='transition-colors hover:text-white'>

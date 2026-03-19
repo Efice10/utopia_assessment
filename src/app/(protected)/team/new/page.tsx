@@ -64,7 +64,7 @@ export default function NewTeamMemberPage() {
     resolver: zodResolver(formSchema),
   });
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (_data: FormData) => {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
 
