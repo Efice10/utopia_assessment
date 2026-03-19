@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { auditLogClient } from '@/lib/audit-client';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import type {
   Branch,
@@ -87,7 +88,9 @@ export function useCreateBranch() {
       if (error) throw error;
       return data as Branch;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Log audit event
+      auditLogClient.createBranch(data.id, data.name);
       queryClient.invalidateQueries({ queryKey: branchKeys.lists() });
     },
   });
@@ -98,7 +101,7 @@ export function useUpdateBranch() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: BranchUpdate }) => {
+    mutationFn: async ({ id, updates, oldValues }: { id: string; updates: BranchUpdate; oldValues?: Branch }) => {
       const supabase = getSupabaseBrowserClient();
       const { data, error } = await supabase
         .from('branches')
@@ -108,10 +111,17 @@ export function useUpdateBranch() {
         .single();
 
       if (error) throw error;
-      return data as Branch;
+      return { data: data as Branch, oldValues } as const;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: branchKeys.detail(variables.id) });
+    onSuccess: ({ data, oldValues }) => {
+      // Log audit event
+      auditLogClient.updateBranch(
+        data.id,
+        data.name,
+        oldValues ? (oldValues as unknown as Record<string, unknown>) : undefined,
+        data as unknown as Record<string, unknown>
+      );
+      queryClient.invalidateQueries({ queryKey: branchKeys.detail(data.id) });
       queryClient.invalidateQueries({ queryKey: branchKeys.lists() });
     },
   });
@@ -122,13 +132,16 @@ export function useDeleteBranch() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
       const supabase = getSupabaseBrowserClient();
       const { error } = await supabase.from('branches').delete().eq('id', id);
 
       if (error) throw error;
+      return { id, name };
     },
-    onSuccess: () => {
+    onSuccess: ({ id, name }) => {
+      // Log audit event
+      auditLogClient.deleteBranch(id, name);
       queryClient.invalidateQueries({ queryKey: branchKeys.lists() });
     },
   });

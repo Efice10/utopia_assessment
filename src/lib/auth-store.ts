@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 
+import { auditLogClient } from '@/lib/audit-client';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import type { User } from '@/types/auth';
 
@@ -92,17 +93,22 @@ export const useAuthStore = create<AuthStore>()((set) => ({
 
         if (profile) {
           set({ user: profile, loading: false });
+          // Log successful login
+          auditLogClient.login(profile.name, profile.email);
         } else {
           // Fallback to auth metadata if no profile exists
+          const fallbackUser = {
+            id: data.user.id,
+            email: data.user.email ?? '',
+            name: data.user.user_metadata?.name ?? 'User',
+            role: 'user' as const,
+          };
           set({
-            user: {
-              id: data.user.id,
-              email: data.user.email ?? '',
-              name: data.user.user_metadata?.name ?? 'User',
-              role: 'user',
-            },
+            user: fallbackUser,
             loading: false,
           });
+          // Log successful login
+          auditLogClient.login(fallbackUser.name, fallbackUser.email);
         }
       }
 
@@ -167,7 +173,14 @@ export const useAuthStore = create<AuthStore>()((set) => ({
   signOut: async () => {
     try {
       const supabase = getSupabaseBrowserClient();
+      const currentUser = useAuthStore.getState().user;
+
       await supabase.auth.signOut();
+
+      // Log logout before clearing user
+      if (currentUser) {
+        auditLogClient.logout(currentUser.name, currentUser.email);
+      }
     } catch (error) {
       console.error('Sign out error:', error);
     }

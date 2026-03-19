@@ -18,7 +18,7 @@ export function LoginForm({
 }: React.ComponentProps<'div'>) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/orders';
+  const redirect = searchParams.get('redirect') || '/dashboard';
 
   const signIn = useAuthStore((state) => state.signIn);
   const loading = useAuthStore((state) => state.loading);

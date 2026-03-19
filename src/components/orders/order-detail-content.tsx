@@ -123,7 +123,7 @@ export function OrderDetailContent({ id }: OrderDetailContentProps) {
   const handleDelete = async () => {
     if (!order) return;
     try {
-      await deleteOrder.mutateAsync(order.id);
+      await deleteOrder.mutateAsync({ id: order.id, orderNo: order.order_no });
       router.push('/orders');
     } catch (error) {
       console.error('Failed to delete order:', error);

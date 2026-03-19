@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { auditLogClient } from '@/lib/audit-client';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import type { User, UserInsert, UserUpdate, UserRole } from '@/types/database';
 
@@ -104,7 +105,9 @@ export function useCreateUser() {
       if (error) throw error;
       return data as User;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Log audit event
+      auditLogClient.createUser(data.id, data.name, data.email);
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
       queryClient.invalidateQueries({ queryKey: userKeys.technicians() });
     },
@@ -116,7 +119,7 @@ export function useUpdateUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: UserUpdate }) => {
+    mutationFn: async ({ id, updates, oldValues }: { id: string; updates: UserUpdate; oldValues?: User }) => {
       const supabase = getSupabaseBrowserClient();
       const { data, error } = await supabase
         .from('users')
@@ -126,10 +129,17 @@ export function useUpdateUser() {
         .single();
 
       if (error) throw error;
-      return data as User;
+      return { data: data as User, oldValues } as const;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: userKeys.detail(variables.id) });
+    onSuccess: ({ data, oldValues }) => {
+      // Log audit event
+      auditLogClient.updateUser(
+        data.id,
+        data.name,
+        oldValues ? (oldValues as unknown as Record<string, unknown>) : undefined,
+        data as unknown as Record<string, unknown>
+      );
+      queryClient.invalidateQueries({ queryKey: userKeys.detail(data.id) });
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
       queryClient.invalidateQueries({ queryKey: userKeys.technicians() });
     },
@@ -141,13 +151,16 @@ export function useDeleteUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
       const supabase = getSupabaseBrowserClient();
       const { error } = await supabase.from('users').delete().eq('id', id);
 
       if (error) throw error;
+      return { id, name };
     },
-    onSuccess: () => {
+    onSuccess: ({ id, name }) => {
+      // Log audit event
+      auditLogClient.deleteUser(id, name);
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
       queryClient.invalidateQueries({ queryKey: userKeys.technicians() });
     },

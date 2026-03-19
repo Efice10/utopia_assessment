@@ -60,7 +60,7 @@ export async function middleware(request: NextRequest) {
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
   if (isAuthRoute && isAuthenticated) {
     const url = request.nextUrl.clone();
-    url.pathname = '/orders';
+    url.pathname = '/dashboard';
     return NextResponse.redirect(url);
   }
 

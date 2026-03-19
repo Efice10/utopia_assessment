@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { auditLogClient } from '@/lib/audit-client';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import type {
   Order,
@@ -113,7 +114,9 @@ export function useCreateOrder() {
       if (error) throw error;
       return data as Order;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Log audit event
+      auditLogClient.createOrder(data.id, data.order_no, data.customer_name);
       queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
     },
   });
@@ -124,7 +127,7 @@ export function useUpdateOrder() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: OrderUpdate }) => {
+    mutationFn: async ({ id, updates, oldValues }: { id: string; updates: OrderUpdate; oldValues?: OrderWithRelations }) => {
       const supabase = getSupabaseBrowserClient();
       const { data, error } = await supabase
         .from('orders')
@@ -134,10 +137,17 @@ export function useUpdateOrder() {
         .single();
 
       if (error) throw error;
-      return data as Order;
+      return { data: data as Order, oldValues } as const;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: orderKeys.detail(variables.id) });
+    onSuccess: ({ data, oldValues }) => {
+      // Log audit event
+      auditLogClient.updateOrder(
+        data.id,
+        data.order_no,
+        oldValues ? (oldValues as unknown as Record<string, unknown>) : undefined,
+        data as unknown as Record<string, unknown>
+      );
+      queryClient.invalidateQueries({ queryKey: orderKeys.detail(data.id) });
       queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
     },
   });
@@ -148,7 +158,7 @@ export function useUpdateOrderStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+    mutationFn: async ({ id, status, oldStatus }: { id: string; status: string; oldStatus?: string }) => {
       const supabase = getSupabaseBrowserClient();
       const { data, error } = await supabase
         .from('orders')
@@ -158,10 +168,17 @@ export function useUpdateOrderStatus() {
         .single();
 
       if (error) throw error;
-      return data as Order;
+      return { data: data as Order, oldStatus } as const;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: orderKeys.detail(variables.id) });
+    onSuccess: ({ data, oldStatus }) => {
+      // Log audit event
+      auditLogClient.updateOrder(
+        data.id,
+        data.order_no,
+        oldStatus ? { status: oldStatus } : undefined,
+        { status: data.status }
+      );
+      queryClient.invalidateQueries({ queryKey: orderKeys.detail(data.id) });
       queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
     },
   });
@@ -172,13 +189,16 @@ export function useDeleteOrder() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async ({ id, orderNo }: { id: string; orderNo: string }) => {
       const supabase = getSupabaseBrowserClient();
       const { error } = await supabase.from('orders').delete().eq('id', id);
 
       if (error) throw error;
+      return { id, orderNo };
     },
-    onSuccess: () => {
+    onSuccess: ({ id, orderNo }) => {
+      // Log audit event
+      auditLogClient.deleteOrder(id, orderNo);
       queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
     },
   });
