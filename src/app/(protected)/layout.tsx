@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation';
 import { AppFooter } from '@/components/layouts/app-footer';
 import { AppSidebar } from '@/components/layouts/app-sidebar';
 import { HeaderUser } from '@/components/layouts/header-user';
-import { NotificationBell } from '@/components/shared';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { DynamicBreadcrumb } from '@/components/ui/dynamic-breadcrumb';
 import { Separator } from '@/components/ui/separator';
