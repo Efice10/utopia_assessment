@@ -18,6 +18,7 @@ import {
 import { StatusBadge } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { useOrders } from '@/hooks';
+import { useAuthStore } from '@/lib/auth-store';
 import { cn } from '@/lib/utils';
 import type { OrderWithRelations } from '@/types/database';
 
@@ -53,11 +54,15 @@ function mapOrderStatus(status: string): JobStatus {
 
 export function JobsContent() {
   const [activeTab, setActiveTab] = useState<JobStatus>('pending');
+  const { user } = useAuthStore();
 
-  const { data: orders, isLoading, error } = useOrders();
+  // Only fetch orders assigned to this technician
+  const { data: orders, isLoading, error } = useOrders(
+    user?.id ? { technicianId: user.id } : undefined,
+    !!user?.id
+  );
 
-  // Filter orders for technician (in real app, filter by assigned_technician_id)
-  // For mock, we show all orders
+  // Filter orders by status tab
   const filteredJobs = orders?.filter((order) => {
     const jobStatus = mapOrderStatus(order.status);
     return jobStatus === activeTab;

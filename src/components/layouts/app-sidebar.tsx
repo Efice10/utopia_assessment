@@ -57,7 +57,7 @@ const allNavSections: NavSection[] = [
         title: 'Dashboard',
         url: '/dashboard',
         icon: LayoutDashboard,
-        roles: ['admin', 'manager'], // Admin: Yes, Manager: Yes
+        roles: ['admin', 'manager', 'technician'], // Available to all roles
       },
       {
         title: 'Orders',

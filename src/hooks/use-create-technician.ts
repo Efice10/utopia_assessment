@@ -64,6 +64,7 @@ export function useCreateTechnician() {
           name: data.name,
           phone: data.phone,
           role: 'technician',
+          branch_id: data.branch_id, // Set branch_id on users table
           is_active: data.is_active,
           must_change_password: true, // Force password change on first login
         })

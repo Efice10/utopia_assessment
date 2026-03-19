@@ -16,6 +16,7 @@ import {
   MessageSquare,
   Upload,
   X,
+  ShieldAlert,
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -27,6 +28,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useOrder, useUpdateOrder } from '@/hooks';
 import { useCreateServiceRecord } from '@/hooks/use-service-records';
+import { useAuthStore } from '@/lib/auth-store';
 
 const schema = z.object({
   work_done: z.string().min(1, 'Work done is required'),
@@ -40,6 +42,7 @@ type FormData = z.infer<typeof schema>;
 
 export function JobDetailContent({ id }: { id: string }) {
   const router = useRouter();
+  const { user } = useAuthStore();
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -85,6 +88,25 @@ export function JobDetailContent({ id }: { id: string }) {
     );
   }
 
+  // SECURITY: Verify this job belongs to the current technician
+  const isAssignedToMe = order.assigned_technician_id === user?.id;
+  if (!isAssignedToMe) {
+    return (
+      <div className='flex flex-col items-center justify-center py-16 px-4 text-center'>
+        <div className='w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4'>
+          <ShieldAlert className='w-8 h-8 text-destructive' />
+        </div>
+        <h2 className='text-xl font-semibold mb-2'>Access Denied</h2>
+        <p className='text-muted-foreground mb-4 max-w-sm'>
+          This job is not assigned to you. You can only view and complete jobs that are assigned to you.
+        </p>
+        <Button onClick={() => router.push('/jobs')}>
+          Go to My Jobs
+        </Button>
+      </div>
+    );
+  }
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
     const totalFiles = files.length + selectedFiles.length;
@@ -102,12 +124,17 @@ export function JobDetailContent({ id }: { id: string }) {
   };
 
   const handleSubmit = async (data: FormData) => {
+    if (!user?.id) {
+      alert('You must be logged in to complete a job');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       // Create service record
       await createServiceRecord.mutateAsync({
         order_id: order.id,
-        technician_id: order.assigned_technician_id || 'tech-001',
+        technician_id: user.id, // Use current user's ID
         work_done: data.work_done,
         extra_charges: data.extra_charges || 0,
         files: files.map((f) => f.name),

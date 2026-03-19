@@ -14,6 +14,7 @@ import {
   Phone,
   User,
   Wrench,
+  ShieldAlert,
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -25,9 +26,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useOrder, useUpdateOrder } from '@/hooks';
 import { useCreateServiceRecord } from '@/hooks/use-service-records';
+import { useAuthStore } from '@/lib/auth-store';
 
 import { FileUpload } from './file-upload';
-
 
 const schema = z.object({
   work_done: z.string().min(1, 'Work done is required'),
@@ -48,6 +49,7 @@ export function JobCompletionForm({ orderId }: JobCompletionFormProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const { user } = useAuthStore();
 
   const { data: order, isLoading: orderLoading, error: orderError } = useOrder(orderId);
   const updateOrder = useUpdateOrder();
@@ -76,14 +78,17 @@ export function JobCompletionForm({ orderId }: JobCompletionFormProps) {
   };
 
   const handleSubmit = async (data: FormData) => {
-    if (!order) return;
+    if (!order || !user?.id) {
+      alert('You must be logged in to complete a job');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
       // Create service record
       await createServiceRecord.mutateAsync({
         order_id: order.id,
-        technician_id: order.assigned_technician_id || 'tech-001',
+        technician_id: user.id, // Use current user's ID
         work_done: data.work_done,
         extra_charges: data.extra_charges || 0,
         files: files.map((f) => f.name), // In real app, upload files first
@@ -131,6 +136,25 @@ export function JobCompletionForm({ orderId }: JobCompletionFormProps) {
     return (
       <div className='text-center py-12 text-muted-foreground'>
         Order not found
+      </div>
+    );
+  }
+
+  // SECURITY: Verify this job belongs to the current technician
+  const isAssignedToMe = order.assigned_technician_id === user?.id;
+  if (!isAssignedToMe) {
+    return (
+      <div className='flex flex-col items-center justify-center py-16 px-4 text-center'>
+        <div className='w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4'>
+          <ShieldAlert className='w-8 h-8 text-destructive' />
+        </div>
+        <h2 className='text-xl font-semibold mb-2'>Access Denied</h2>
+        <p className='text-muted-foreground mb-4 max-w-sm'>
+          This job is not assigned to you. You can only view and complete jobs that are assigned to you.
+        </p>
+        <Button onClick={() => router.push('/jobs')}>
+          Go to My Jobs
+        </Button>
       </div>
     );
   }
