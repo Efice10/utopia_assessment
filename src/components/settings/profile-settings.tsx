@@ -3,18 +3,22 @@
 import { useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2, User as UserIcon, Camera } from 'lucide-react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import { z } from 'zod';
 
-import {
-  AnimatedSettingsCard,
-  AnimatedSettingsForm,
-} from '@/components/ui/animated-settings';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { useAuthStore } from '@/lib/auth-store';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 
@@ -79,11 +83,12 @@ export function ProfileSettings() {
         phone: data.phone,
       });
 
-      // Show success (you could add a toast here)
-      alert('Profile updated successfully!');
+      toast.success('Profile updated successfully');
     } catch (error) {
       console.error('Failed to save profile:', error);
-      alert('Failed to save profile. Please try again.');
+      toast.error('Failed to save profile', {
+        description: 'Please try again.',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -95,12 +100,16 @@ export function ProfileSettings() {
 
     // Validate file
     if (file.size > 1024 * 1024) {
-      alert('File size must be less than 1MB');
+      toast.error('File too large', {
+        description: 'File size must be less than 1MB',
+      });
       return;
     }
 
     if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
-      alert('Only JPG, PNG, and GIF files are allowed');
+      toast.error('Invalid file type', {
+        description: 'Only JPG, PNG, and GIF files are allowed',
+      });
       return;
     }
 
@@ -137,96 +146,137 @@ export function ProfileSettings() {
         avatar: publicUrl,
       });
 
-      alert('Avatar updated successfully!');
+      toast.success('Avatar updated successfully');
     } catch (error) {
       console.error('Failed to upload avatar:', error);
-      alert('Failed to upload avatar. Please try again.');
+      toast.error('Failed to upload avatar', {
+        description: 'Please try again.',
+      });
     } finally {
       setUploadingAvatar(false);
     }
   };
 
   return (
-    <div className='space-y-6'>
-      <AnimatedSettingsCard>
-        <h2 className='text-2xl font-bold tracking-tight'>Profile</h2>
-        <p className='text-muted-foreground'>
-          Manage your public profile information.
-        </p>
-      </AnimatedSettingsCard>
-      <Separator />
-
-      <AnimatedSettingsCard delay={0.1}>
-        <h3 className='text-lg font-medium'>Avatar</h3>
-        <div className='flex items-center gap-4'>
-          <Avatar className='h-20 w-20'>
-            <AvatarImage src={user?.avatar} alt={user?.name ?? 'Profile'} />
-            <AvatarFallback className='text-lg'>{initials}</AvatarFallback>
-          </Avatar>
-          <div className='space-y-2'>
-            <Label htmlFor='avatar-upload'>
-              <Button asChild disabled={uploadingAvatar}>
-                <span>
-                  {uploadingAvatar ? 'Uploading...' : 'Upload new avatar'}
-                </span>
-              </Button>
-            </Label>
-            <input
-              id='avatar-upload'
-              type='file'
-              accept='image/jpeg,image/png,image/gif'
-              className='hidden'
-              onChange={handleAvatarUpload}
-              disabled={uploadingAvatar}
-            />
-            <p className='text-muted-foreground text-sm'>
-              JPG, GIF or PNG. 1MB max.
-            </p>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <UserIcon className="h-5 w-5" />
+          Profile Settings
+        </CardTitle>
+        <CardDescription>
+          Manage your personal information and avatar
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Avatar Section */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground">Avatar</h3>
+            <div className="flex items-center gap-6">
+              <Avatar className="h-20 w-20">
+                <AvatarImage src={user?.avatar} alt={user?.name ?? 'Profile'} />
+                <AvatarFallback className="text-lg">{initials}</AvatarFallback>
+              </Avatar>
+              <div className="space-y-2">
+                <Label htmlFor="avatar-upload">
+                  <Button asChild disabled={uploadingAvatar}>
+                    <span>
+                      {uploadingAvatar ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Camera className="mr-2 h-4 w-4" />
+                          Upload new avatar
+                        </>
+                      )}
+                    </span>
+                  </Button>
+                </Label>
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                  disabled={uploadingAvatar}
+                />
+                <p className="text-muted-foreground text-xs">
+                  JPG, GIF or PNG. 1MB max.
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
-      </AnimatedSettingsCard>
 
-      <Separator />
+          {/* Personal Information */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground">
+              Personal Information
+            </h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="name">
+                  Full Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="name"
+                  placeholder="Enter your full name"
+                  {...register('name')}
+                  className={errors.name ? 'border-destructive' : ''}
+                />
+                {errors.name && (
+                  <p className="text-sm text-destructive">{errors.name.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  {...register('email')}
+                  disabled
+                  className="bg-muted/50"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Email cannot be changed. Contact admin if needed.
+                </p>
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="012-3456789"
+                  {...register('phone')}
+                  className={errors.phone ? 'border-destructive' : ''}
+                />
+                {errors.phone && (
+                  <p className="text-sm text-destructive">{errors.phone.message}</p>
+                )}
+              </div>
+            </div>
+          </div>
 
-      <AnimatedSettingsForm
-        onSubmit={handleSubmit(onSubmit)}
-        className='space-y-6'
-      >
-        <div className='space-y-2'>
-          <Label htmlFor='name'>Full Name</Label>
-          <Input id='name' {...register('name')} />
-          {errors.name && (
-            <p className='text-destructive text-sm'>{errors.name.message}</p>
-          )}
-        </div>
-
-        <div className='space-y-2'>
-          <Label htmlFor='email'>Email</Label>
-          <Input id='email' type='email' {...register('email')} disabled />
-          <p className='text-muted-foreground text-sm'>
-            Email cannot be changed. Contact admin if needed.
-          </p>
-          {errors.email && (
-            <p className='text-destructive text-sm'>{errors.email.message}</p>
-          )}
-        </div>
-
-        <div className='space-y-2'>
-          <Label htmlFor='phone'>Phone Number</Label>
-          <Input
-            id='phone'
-            type='tel'
-            placeholder='+60 12-3456789'
-            {...register('phone')}
-          />
-        </div>
-
-        <AnimatedSettingsCard delay={0.3}>
-          <Button type='submit' disabled={isLoading || !isDirty}>
-            {isLoading ? 'Saving...' : 'Save changes'}
-          </Button>
-        </AnimatedSettingsCard>
-      </AnimatedSettingsForm>
-    </div>
+          {/* Submit Buttons */}
+          <div className="flex justify-end gap-3">
+            <Button type="submit" disabled={isLoading || !isDirty}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save changes'
+              )}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
