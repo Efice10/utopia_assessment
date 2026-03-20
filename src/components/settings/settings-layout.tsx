@@ -17,21 +17,25 @@ const settingsNavigation = [
     name: 'General',
     href: '/dashboard/settings',
     icon: '⚙️',
+    disabled: true,
   },
   {
     name: 'Profile',
     href: '/dashboard/settings/profile',
     icon: '👤',
+    disabled: true,
   },
   {
     name: 'Security',
     href: '/dashboard/settings/security',
     icon: '🔒',
+    disabled: true,
   },
   {
     name: 'Notifications',
     href: '/dashboard/settings/notifications',
     icon: '🔔',
+    disabled: true,
   },
 ];
 
@@ -56,16 +60,25 @@ export function SettingsLayout({ children }: { children: React.ReactNode }) {
                   key={item.href}
                   variant={pathname === item.href ? 'secondary' : 'ghost'}
                   className={cn(
-                    'w-full justify-start transition-all duration-200 hover:scale-[1.02]',
+                    'w-full justify-start transition-all duration-200',
                     pathname === item.href &&
-                      'bg-muted text-primary font-medium'
+                      'bg-muted text-primary font-medium',
+                    item.disabled && 'opacity-50 cursor-not-allowed hover:scale-100 shadow-sm'
                   )}
-                  asChild
+                  disabled={item.disabled}
+                  asChild={!item.disabled}
                 >
-                  <Link href={item.href}>
-                    <span className='mr-2'>{item.icon}</span>
-                    {item.name}
-                  </Link>
+                  {item.disabled ? (
+                    <span className='flex items-center'>
+                      <span className='mr-2'>{item.icon}</span>
+                      {item.name}
+                    </span>
+                  ) : (
+                    <Link href={item.href}>
+                      <span className='mr-2'>{item.icon}</span>
+                      {item.name}
+                    </Link>
+                  )}
                 </Button>
               ))}
             </nav>

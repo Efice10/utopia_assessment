@@ -11,7 +11,6 @@ import {
   ClipboardList,
   LayoutDashboard,
   type LucideIcon,
-  Settings,
   Sparkles,
   Users,
   Wrench,
@@ -100,13 +99,6 @@ const aiFeatureItem: NavItemType = {
   url: '/ai-assistant',
   icon: Sparkles,
   roles: ['admin', 'manager'], // Admin & Manager: AI Queries = Yes
-};
-
-const settingsItem: NavItemType = {
-  title: 'Settings',
-  url: '/dashboard/settings',
-  icon: Settings,
-  roles: ['admin', 'technician', 'manager'],
 };
 
 // Audit Logs - Admin only
@@ -243,12 +235,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroup>
         )}
 
-        {/* Settings */}
-        <SidebarGroup>
-          <SidebarMenu>
-            <NavItem item={settingsItem} />
-          </SidebarMenu>
-        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter />
