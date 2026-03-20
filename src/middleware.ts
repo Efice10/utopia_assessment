@@ -5,8 +5,9 @@ import { createServerClient } from '@supabase/ssr';
 // Protected route prefixes
 const protectedRoutes = ['/orders', '/jobs', '/dashboard', '/team', '/projects', '/technicians', '/ai-assistant', '/account', '/audit-logs'];
 
-// Locked routes - no access for anyone
+// Locked routes - no access for anyone (but allow profile)
 const lockedRoutes = ['/dashboard/settings'];
+const lockedRoutesAllowlist = ['/dashboard/settings/profile'];
 
 // Auth routes (redirect away if already logged in)
 const authRoutes = ['/login', '/signup', '/forgot-password'];
@@ -46,8 +47,9 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isAuthenticated = !!user;
 
-  // Locked routes - redirect to dashboard
-  const isLockedRoute = lockedRoutes.some((route) => pathname.startsWith(route));
+  // Locked routes - redirect to dashboard (but allow whitelisted routes)
+  const isAllowlisted = lockedRoutesAllowlist.some((route) => pathname === route);
+  const isLockedRoute = !isAllowlisted && lockedRoutes.some((route) => pathname.startsWith(route));
   if (isLockedRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';

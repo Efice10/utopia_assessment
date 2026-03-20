@@ -3,6 +3,7 @@ export interface User {
   name: string;
   email: string;
   avatar?: string;
+  phone?: string;
   role?: 'user' | 'admin' | 'technician' | 'manager';
   branch_id?: string | null;
   must_change_password?: boolean;

@@ -3,13 +3,12 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-import { Briefcase, LogOut, Settings, User } from 'lucide-react';
+import { LogOut, User } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -70,29 +69,12 @@ export function HeaderUser({ user, onLogout }: HeaderUserProps) {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem asChild>
-            <Link href='/dashboard/settings/profile'>
-              <User className='mr-2 h-4 w-4' />
-              My Profile
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href='/dashboard/settings'>
-              <Briefcase className='mr-2 h-4 w-4' />
-              Account
-            </Link>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem asChild>
-            <Link href='/dashboard/settings'>
-              <Settings className='mr-2 h-4 w-4' />
-              Settings
-            </Link>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
+        <DropdownMenuItem asChild>
+          <Link href='/dashboard/settings/profile'>
+            <User className='mr-2 h-4 w-4' />
+            My Profile
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={handleLogout}

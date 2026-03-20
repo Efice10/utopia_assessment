@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -13,54 +15,135 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
+import { useAuthStore } from '@/lib/auth-store';
+import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 
 const profileSettingsSchema = z.object({
-  firstName: z.string().min(2, 'First name must be at least 2 characters'),
-  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
+  name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
   phone: z.string().optional(),
-  bio: z.string().optional(),
-  location: z.string().optional(),
-  website: z
-    .string()
-    .url('Please enter a valid URL')
-    .optional()
-    .or(z.literal('')),
 });
 
 type ProfileSettingsData = z.infer<typeof profileSettingsSchema>;
 
 export function ProfileSettings() {
+  const user = useAuthStore((state) => state.user);
+  const setUser = useAuthStore((state) => state.setUser);
+  const [isLoading, setIsLoading] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isDirty },
   } = useForm<ProfileSettingsData>({
     resolver: zodResolver(profileSettingsSchema),
     defaultValues: {
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john@example.com',
-      phone: '+1 (555) 123-4567',
-      bio: 'Product designer and developer passionate about creating great user experiences.',
-      location: 'San Francisco, CA',
-      website: 'https://johndoe.com',
+      name: user?.name ?? '',
+      email: user?.email ?? '',
+      phone: user?.phone ?? '',
     },
   });
 
-  const onSubmit = async (_data: ProfileSettingsData) => {
+  const initials = user?.name
+    ? user.name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)
+    : 'U';
+
+  const onSubmit = async (data: ProfileSettingsData) => {
+    if (!user?.id) return;
+
+    setIsLoading(true);
     try {
-      // TODO: Implement API call to save profile
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      // Show success message
-    } catch {
-      throw new Error('Failed to save profile');
+      const supabase = getSupabaseBrowserClient();
+
+      const { error } = await supabase
+        .from('users')
+        .update({
+          name: data.name,
+          phone: data.phone,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setUser({
+        ...user,
+        name: data.name,
+        phone: data.phone,
+      });
+
+      // Show success (you could add a toast here)
+      alert('Profile updated successfully!');
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+      alert('Failed to save profile. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleAvatarUpload = () => {
-    // TODO: Implement avatar upload functionality
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.id) return;
+
+    // Validate file
+    if (file.size > 1024 * 1024) {
+      alert('File size must be less than 1MB');
+      return;
+    }
+
+    if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
+      alert('Only JPG, PNG, and GIF files are allowed');
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const supabase = getSupabaseBrowserClient();
+
+      // Upload to storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/avatar.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('avatars').getPublicUrl(fileName);
+
+      // Update user record
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setUser({
+        ...user,
+        avatar: publicUrl,
+      });
+
+      alert('Avatar updated successfully!');
+    } catch (error) {
+      console.error('Failed to upload avatar:', error);
+      alert('Failed to upload avatar. Please try again.');
+    } finally {
+      setUploadingAvatar(false);
+    }
   };
 
   return (
@@ -77,11 +160,25 @@ export function ProfileSettings() {
         <h3 className='text-lg font-medium'>Avatar</h3>
         <div className='flex items-center gap-4'>
           <Avatar className='h-20 w-20'>
-            <AvatarImage src='/avatars/user.jpg' alt='Profile' />
-            <AvatarFallback className='text-lg'>JD</AvatarFallback>
+            <AvatarImage src={user?.avatar} alt={user?.name ?? 'Profile'} />
+            <AvatarFallback className='text-lg'>{initials}</AvatarFallback>
           </Avatar>
           <div className='space-y-2'>
-            <Button onClick={handleAvatarUpload}>Upload new avatar</Button>
+            <Label htmlFor='avatar-upload'>
+              <Button asChild disabled={uploadingAvatar}>
+                <span>
+                  {uploadingAvatar ? 'Uploading...' : 'Upload new avatar'}
+                </span>
+              </Button>
+            </Label>
+            <input
+              id='avatar-upload'
+              type='file'
+              accept='image/jpeg,image/png,image/gif'
+              className='hidden'
+              onChange={handleAvatarUpload}
+              disabled={uploadingAvatar}
+            />
             <p className='text-muted-foreground text-sm'>
               JPG, GIF or PNG. 1MB max.
             </p>
@@ -95,31 +192,20 @@ export function ProfileSettings() {
         onSubmit={handleSubmit(onSubmit)}
         className='space-y-6'
       >
-        <div className='grid grid-cols-2 gap-4'>
-          <div className='space-y-2'>
-            <Label htmlFor='firstName'>First Name</Label>
-            <Input id='firstName' {...register('firstName')} />
-            {errors.firstName && (
-              <p className='text-destructive text-sm'>
-                {errors.firstName.message}
-              </p>
-            )}
-          </div>
-
-          <div className='space-y-2'>
-            <Label htmlFor='lastName'>Last Name</Label>
-            <Input id='lastName' {...register('lastName')} />
-            {errors.lastName && (
-              <p className='text-destructive text-sm'>
-                {errors.lastName.message}
-              </p>
-            )}
-          </div>
+        <div className='space-y-2'>
+          <Label htmlFor='name'>Full Name</Label>
+          <Input id='name' {...register('name')} />
+          {errors.name && (
+            <p className='text-destructive text-sm'>{errors.name.message}</p>
+          )}
         </div>
 
         <div className='space-y-2'>
           <Label htmlFor='email'>Email</Label>
-          <Input id='email' type='email' {...register('email')} />
+          <Input id='email' type='email' {...register('email')} disabled />
+          <p className='text-muted-foreground text-sm'>
+            Email cannot be changed. Contact admin if needed.
+          </p>
           {errors.email && (
             <p className='text-destructive text-sm'>{errors.email.message}</p>
           )}
@@ -130,52 +216,14 @@ export function ProfileSettings() {
           <Input
             id='phone'
             type='tel'
-            placeholder='+1 (555) 123-4567'
+            placeholder='+60 12-3456789'
             {...register('phone')}
           />
         </div>
 
-        <div className='space-y-2'>
-          <Label htmlFor='bio'>Bio</Label>
-          <Textarea
-            id='bio'
-            placeholder='Tell us about yourself...'
-            {...register('bio')}
-          />
-          <p className='text-muted-foreground text-sm'>
-            Brief description for your profile.
-          </p>
-        </div>
-
-        <div className='grid grid-cols-2 gap-4'>
-          <div className='space-y-2'>
-            <Label htmlFor='location'>Location</Label>
-            <Input
-              id='location'
-              placeholder='San Francisco, CA'
-              {...register('location')}
-            />
-          </div>
-
-          <div className='space-y-2'>
-            <Label htmlFor='website'>Website</Label>
-            <Input
-              id='website'
-              type='url'
-              placeholder='https://example.com'
-              {...register('website')}
-            />
-            {errors.website && (
-              <p className='text-destructive text-sm'>
-                {errors.website.message}
-              </p>
-            )}
-          </div>
-        </div>
-
         <AnimatedSettingsCard delay={0.3}>
-          <Button type='submit' disabled={isSubmitting}>
-            {isSubmitting ? 'Saving...' : 'Save changes'}
+          <Button type='submit' disabled={isLoading || !isDirty}>
+            {isLoading ? 'Saving...' : 'Save changes'}
           </Button>
         </AnimatedSettingsCard>
       </AnimatedSettingsForm>
